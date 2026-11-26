@@ -5,76 +5,106 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>低压电工实操 · 首页</title>
 <style>
-:root{--c1:#4f7df9;--c2:#8b5cf6;--exam:#e24b4a;--prac:#22c55e;}
+:root{--c1:#185FA5;--c2:#4f7df9;--exam:#e24b4a;--prac:#22c55e;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
 body{background:#1a1f2b;display:flex;align-items:center;justify-content:center;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;overflow:hidden;}
 
-/* ---------- phone frame ---------- */
 .frame{position:relative;}
 .bezel{background:#0d1117;border-radius:36px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px #2a3040;}
 .screen{width:390px;height:844px;border-radius:26px;overflow:hidden;background:#eef1f6;position:relative;}
 .screen iframe{width:390px;height:844px;border:none;display:block;}
 
-/* ---------- HOME overlay (inside .screen) ---------- */
-.home{position:absolute;inset:0;z-index:50;background:#eef1f6;display:flex;flex-direction:column;overflow-y:auto;}
-.home.hidden{display:none;}
-.hd{background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;padding:34px 24px 26px;text-align:center;}
-.hd h1{font-size:22px;letter-spacing:.05em;}
-.hd p{font-size:13px;opacity:.85;margin-top:6px;}
-.modes{display:flex;flex-direction:column;gap:16px;padding:26px 20px;}
-.mode{border-radius:18px;padding:26px 22px;cursor:pointer;color:#fff;transition:.15s;position:relative;overflow:hidden;}
+.pane{position:absolute;inset:0;z-index:50;background:#eef1f6;display:none;flex-direction:column;overflow-y:auto;}
+.pane.show{display:flex;}
+
+/* header */
+.phd{background:linear-gradient(135deg,#185FA5,#4f7df9);color:#fff;padding:18px 18px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.phd .back{font-size:22px;cursor:pointer;padding:0 4px;opacity:.9;}
+.phd h1{font-size:16px;font-weight:600;flex:1;}
+.phd .tag{font-size:11px;background:rgba(255,255,255,.22);border-radius:20px;padding:3px 10px;}
+
+/* home hero */
+.hero{background:linear-gradient(135deg,#185FA5,#4f7df9);color:#fff;padding:30px 22px 26px;text-align:center;flex-shrink:0;}
+.hero h1{font-size:21px;letter-spacing:.04em;}
+.hero p{font-size:12px;opacity:.85;margin-top:6px;}
+
+.modes{padding:20px 16px;display:flex;flex-direction:column;gap:14px;}
+.mode{border-radius:16px;padding:20px 18px;cursor:pointer;color:#fff;transition:.15s;position:relative;overflow:hidden;}
 .mode:active{transform:scale(.98);}
-.mode h2{font-size:20px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
-.mode p{font-size:13px;opacity:.92;line-height:1.8;}
-.mode .badge{position:absolute;top:16px;right:16px;font-size:11px;background:rgba(255,255,255,.25);border-radius:20px;padding:4px 12px;}
+.mode h2{font-size:18px;margin-bottom:7px;display:flex;align-items:center;gap:9px;}
+.mode p{font-size:12px;opacity:.94;line-height:1.85;}
+.mode .badge{position:absolute;top:14px;right:14px;font-size:10px;background:rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;}
 .mode.exam{background:linear-gradient(135deg,#e24b4a,#b91c1c);}
 .mode.prac{background:linear-gradient(135deg,#22c55e,#15803d);}
-.mode.theory{background:linear-gradient(135deg,var(--c1),var(--c2));}
-.mode-info{margin:0 20px 16px;background:#fff;border-radius:14px;padding:16px 18px;font-size:12px;color:#666;line-height:1.9;box-shadow:0 2px 8px rgba(0,0,0,.05);}
-.mode-info b{color:#185FA5;}
+.mode.theory{background:linear-gradient(135deg,#4f7df9,#8b5cf6);}
 
-/* ---------- module picker sheet ---------- */
-.sheet{position:absolute;inset:0;z-index:60;background:#eef1f6;display:none;flex-direction:column;}
-.sheet.show{display:flex;}
-.sheet .shd{background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;padding:24px 20px;display:flex;align-items:center;gap:12px;}
-.sheet .shd .back{font-size:20px;cursor:pointer;padding:0 6px;}
-.sheet .shd h2{font-size:17px;font-weight:600;}
-.sheet .shd .sub{margin-left:auto;font-size:11px;opacity:.85;}
-.sheet .list{flex:1;overflow-y:auto;padding:14px;}
-.sec{font-size:12px;color:#888;font-weight:700;margin:10px 4px 8px;letter-spacing:.03em;}
-.item{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.15s;}
-.item:active{transform:scale(.98);opacity:.8;}
-.item .ic{font-size:24px;flex-shrink:0;}
-.item .tx{flex:1;min-width:0;}
-.item .tx h3{font-size:14px;color:#222;}
-.item .tx p{font-size:11px;color:#999;margin-top:2px;}
-.item .go{color:#c1c7d0;font-size:18px;flex-shrink:0;}
-.item.missing{opacity:.4;}
-.sec-exp{background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;font-size:11px;border-radius:10px;padding:8px 12px;margin:0 0 8px;line-height:1.7;}
+.tip{margin:0 16px 18px;background:#fff;border-radius:12px;padding:13px 15px;font-size:11.5px;color:#666;line-height:1.9;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.tip b{color:#185FA5;}
 
-/* ---------- side controls (desktop) ---------- */
-.side{position:fixed;left:24px;top:50%;transform:translateY(-50%);background:#12161f;border-radius:16px;padding:16px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.4);}
-.side h3{color:#8b93a5;font-size:12px;font-weight:600;margin-bottom:4px;}
-.side button{background:#1f2633;border:1px solid #2e3746;color:#d0d5de;padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer;text-align:left;transition:.15s;min-width:150px;}
+/* list */
+.list{flex:1;overflow-y:auto;padding:14px;}
+.list .hint{font-size:11.5px;color:#888;line-height:1.8;margin:0 4px 12px;}
+.gsec{font-size:12px;color:#185FA5;font-weight:700;margin:14px 4px 9px;display:flex;align-items:center;gap:7px;}
+.gsec:first-child{margin-top:2px;}
+.gsec span{background:#dfe9f3;border-radius:6px;padding:2px 8px;font-size:11px;}
+.card{background:#fff;border-radius:13px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:center;gap:11px;cursor:pointer;box-shadow:0 2px 7px rgba(0,0,0,.06);transition:.13s;}
+.card:active{transform:scale(.985);opacity:.85;}
+.card .no{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#185FA5,#4f7df9);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.card .tx{flex:1;min-width:0;}
+.card .tx h3{font-size:13px;color:#1a1f2b;line-height:1.4;}
+.card .tx p{font-size:10.5px;color:#9aa3b2;margin-top:3px;}
+.card .go{color:#c8cfd9;font-size:17px;flex-shrink:0;}
+.card.done .no{background:linear-gradient(135deg,#22c55e,#15803d);}
+
+/* exam paper */
+.paper{padding:14px;}
+.paper .pinfo{background:#fff;border-radius:13px;padding:15px;margin-bottom:13px;box-shadow:0 2px 7px rgba(0,0,0,.06);}
+.paper .pinfo h3{font-size:14px;color:#1a1f2b;margin-bottom:8px;}
+.paper .pinfo .meta{font-size:11.5px;color:#888;line-height:1.9;}
+.paper .pinfo .meta b{color:#e24b4a;}
+.qitem{background:#fff;border-radius:13px;padding:14px;margin-bottom:10px;box-shadow:0 2px 7px rgba(0,0,0,.06);border-left:4px solid #dfe9f3;cursor:pointer;transition:.13s;}
+.qitem:active{opacity:.8;}
+.qitem.active{border-left-color:#e24b4a;background:#fff8f8;}
+.qitem.done{border-left-color:#22c55e;}
+.qitem .qh{display:flex;align-items:center;gap:9px;margin-bottom:6px;}
+.qitem .qn{font-size:10.5px;background:#eef2f7;color:#185FA5;border-radius:6px;padding:2px 8px;font-weight:700;flex-shrink:0;}
+.qitem .qt{font-size:13px;color:#1a1f2b;font-weight:600;line-height:1.4;flex:1;}
+.qitem .qd{font-size:11px;color:#8a93a0;line-height:1.7;}
+.qitem .qcode{font-size:10px;color:#b6bec9;margin-top:5px;}
+.qitem .go-btn{margin-top:9px;display:inline-block;background:#e24b4a;color:#fff;font-size:11.5px;border-radius:8px;padding:6px 14px;}
+.qitem.done .go-btn{background:#22c55e;}
+.qitem.locked{opacity:.45;pointer-events:none;}
+
+.acts{padding:0 14px 18px;display:flex;gap:10px;flex-shrink:0;}
+.acts button{flex:1;padding:13px;border:none;border-radius:12px;font-size:13.5px;font-weight:600;cursor:pointer;}
+.acts .primary{background:#e24b4a;color:#fff;}
+.acts .ghost{background:#e5e7eb;color:#374151;}
+
+/* side / zoom */
+.side{position:fixed;left:24px;top:50%;transform:translateY(-50%);background:#12161f;border-radius:16px;padding:15px 13px;display:flex;flex-direction:column;gap:9px;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+.side h3{color:#8b93a5;font-size:11.5px;font-weight:600;margin-bottom:3px;}
+.side button{background:#1f2633;border:1px solid #2e3746;color:#d0d5de;padding:8px 12px;border-radius:9px;font-size:12.5px;cursor:pointer;text-align:left;min-width:145px;}
 .side button:hover{background:#273042;}
-.zoom{position:fixed;right:24px;top:50%;transform:translateY(-50%);background:#12161f;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+.zoom{position:fixed;right:24px;top:50%;transform:translateY(-50%);background:#12161f;border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:9px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.4);}
 .zoom .lbl{color:#8b93a5;font-size:11px;}
-.zoom button{width:40px;height:40px;border-radius:50%;border:1px solid #2e3746;background:#1f2633;color:#fff;font-size:18px;cursor:pointer;}
-.zoom .val{color:#e8ecf3;font-size:15px;font-weight:700;}
-.top{position:fixed;top:18px;left:50%;transform:translateX(-50%);color:#8b93a5;font-size:13px;background:#12161f;padding:8px 18px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+.zoom button{width:38px;height:38px;border-radius:50%;border:1px solid #2e3746;background:#1f2633;color:#fff;font-size:17px;cursor:pointer;}
+.zoom .val{color:#e8ecf3;font-size:14px;font-weight:700;}
+.top{position:fixed;top:16px;left:50%;transform:translateX(-50%);color:#8b93a5;font-size:12.5px;background:#12161f;padding:7px 17px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.4);}
 .top b{color:#e8ecf3;}
 
-/* QuickLook banner */
-#qlBanner{display:none;position:absolute;inset:0;z-index:9999;background:#12161f;color:#fff;padding:40px 24px;text-align:center;flex-direction:column;justify-content:center;gap:16px;}
-#qlBanner h2{font-size:20px;font-weight:800;}
-#qlBanner .stepbox{background:#1f2633;border-radius:14px;padding:18px;text-align:left;font-size:13px;line-height:2.2;}
+#qlBanner{display:none;position:absolute;inset:0;z-index:9999;background:#12161f;color:#fff;padding:36px 22px;text-align:center;flex-direction:column;justify-content:center;gap:14px;}
+#qlBanner h2{font-size:19px;font-weight:800;}
+#qlBanner .stepbox{background:#1f2633;border-radius:13px;padding:16px;text-align:left;font-size:12.5px;line-height:2.1;}
 #qlBanner .stepbox b{color:#4f7df9;}
-#qlBanner .fine{font-size:11px;color:#6b7280;}
 
 @media (max-width:820px){
   .side,.zoom,.top{display:none;}
-  body{overflow:auto;}
+  body{overflow:auto;align-items:flex-start;}
+  .frame{width:100%;}
+  .bezel{padding:0;border-radius:0;box-shadow:none;}
+  .screen{width:100vw;height:100vh;border-radius:0;max-width:none;}
+  .screen iframe{width:100vw;height:100vh;}
 }
 </style>
 </head>
@@ -82,12 +112,10 @@ body{background:#1a1f2b;display:flex;align-items:center;justify-content:center;f
 <div class="top">低压电工实操实训包 · <b id="curPage">首页</b></div>
 
 <div class="side">
-  <h3>快捷直达</h3>
-  <button onclick="home()">🏠 返回首页</button>
-  <button onclick="go('sims/k11-exam-bench-lv.html')">🧰 K11 仪表(低压)</button>
-  <button onclick="go('sims/k11-exam-bench.html')">🧰 K11 仪表(高压)</button>
-  <button onclick="go('sims/schematic-lv3-k31-02.html')">💡 K31-02 日光灯</button>
-  <button onclick="go('sims/schematic-lv3-k31-03.html')">🌀 K31-03 三相</button>
+  <h3>快捷</h3>
+  <button onclick="goHome()">🏠 返回首页</button>
+  <button onclick="openExam()">📝 模拟考试</button>
+  <button onclick="openPractice()">🎯 练习模式</button>
   <button onclick="go('index.html')">📖 题库刷题</button>
 </div>
 
@@ -96,7 +124,7 @@ body{background:#1a1f2b;display:flex;align-items:center;justify-content:center;f
   <button onclick="zoom(-0.1)">−</button>
   <div class="val" id="zv">100%</div>
   <button onclick="zoom(0.1)">＋</button>
-  <button onclick="zoom(0)" style="width:auto;padding:0 10px;height:30px;font-size:12px;border-radius:8px;">重置</button>
+  <button onclick="zoom(0)" style="width:auto;padding:0 9px;height:29px;font-size:11.5px;border-radius:7px;">重置</button>
 </div>
 
 <div class="frame" id="frame">
@@ -104,210 +132,264 @@ body{background:#1a1f2b;display:flex;align-items:center;justify-content:center;f
     <div class="screen" id="screen">
       <iframe id="f" src="about:blank" allow="fullscreen"></iframe>
 
-      <!-- ===== HOME ===== -->
-      <div class="home" id="home">
-        <div class="hd">
+      <!-- ============ HOME ============ -->
+      <div class="pane show" id="paneHome">
+        <div class="hero">
           <h1>低压电工实操实训包</h1>
-          <p>2026年版考试大纲 · 离线全功能</p>
+          <p>2026 年版考纲 · 15 道实操题 · 离线可用</p>
         </div>
         <div class="modes">
-          <div class="mode exam" onclick="startMode('exam')">
-            <div class="badge">考核标准</div>
+          <div class="mode exam" onclick="openExam()">
+            <div class="badge">正规考试</div>
             <h2>📝 模拟考试</h2>
-            <p>按真实考试流程抽题组卷：随机抽 1 套考题（K11-01~04 / 场景题）<br>
-            考试模式：无提示环、无顶部提示带、测点不放大<br>
-            选错仪表 / 带电接线会被安全联锁否决<br>
-            考题不重试，成绩当场判定</p>
+            <p>四个科目各随机抽 1 题，组成一套 4 题试卷<br>
+            科目一安全用具 → 科目二隐患辨识 → 科目三接线 → 科目四应急处置<br>
+            按顺序作答，考试模式无提示</p>
           </div>
-          <div class="mode prac" onclick="startMode('prac')">
-            <div class="badge">自由练习</div>
+          <div class="mode prac" onclick="openPractice()">
+            <div class="badge">15 道全开</div>
             <h2>🎯 练习模式</h2>
-            <p>全部模块自由进入、不限时长：<br>
-            K11 仪表考位 · 科目二隐患辨识 · K31 接线五题<br>
-            K32 开关柜 · K33 临时用电 · 应急处置<br>
-            可开提示、可换题、可反复操作直到熟练</p>
+            <p>15 道实操题平铺列开，自己挑着练<br>
+            不限顺序、不限时长、可反复操作<br>
+            提示可开，适合边学边练</p>
           </div>
           <div class="mode theory" onclick="go('index.html')">
             <div class="badge">题库</div>
             <h2>📖 实操题库</h2>
-            <p>15 道实操考题原文 + 完整评分标准表<br>
-            含电路图 / 接线图，支持掌握标记与重点标记</p>
+            <p>考题原文 + 完整评分标准表<br>
+            含电路图接线图，可标记掌握与重点</p>
           </div>
         </div>
-        <div class="mode-info">
-          <b>考试 vs 练习的区别：</b>两种模式进入的都是同一套仿真，差别在页内开关——
-          模拟考试从「考试模式·逻辑否决」入口进入（右上角红标），页面自动关闭提示；
-          练习模式从普通入口进入，提示默认可开，适合边学边练。
+        <div class="tip">
+          <b>提示：</b>iPhone 建议先「添加到主屏幕」，之后全屏无地址栏直接使用；
+          仿真页顶部有 1:1 / 记录表 / 确认提交 等功能键，操作顺序按页面引导即可。
         </div>
       </div>
 
-      <!-- ===== MODULE PICKER ===== -->
-      <div class="sheet" id="picker">
-        <div class="shd">
-          <span class="back" onclick="backHome()">‹</span>
-          <h2 id="pickerTitle">选择模块</h2>
-          <span class="sub" id="pickerMode"></span>
+      <!-- ============ EXAM ============ -->
+      <div class="pane" id="paneExam">
+        <div class="phd">
+          <span class="back" onclick="goHome()">‹</span>
+          <h1>模拟考试</h1>
+          <span class="tag" id="examTag">4 题一卷</span>
         </div>
-        <div class="list" id="pickerList"></div>
+        <div class="list" id="examList"></div>
+        <div class="acts">
+          <button class="ghost" onclick="reseedExam()">重新抽题</button>
+          <button class="primary" onclick="startExamQ()">开始作答</button>
+        </div>
+      </div>
+
+      <!-- ============ PRACTICE ============ -->
+      <div class="pane" id="panePractice">
+        <div class="phd">
+          <span class="back" onclick="goHome()">‹</span>
+          <h1>练习模式</h1>
+          <span class="tag">15 题全开</span>
+        </div>
+        <div class="list" id="practiceList"></div>
       </div>
 
       <!-- QuickLook banner -->
       <div id="qlBanner">
         <h2>检测到「文件」预览模式</h2>
-        <div style="font-size:14px;color:#9aa3b2;">iOS 文件预览不加载仿真内容，请用 Safari：</div>
+        <div style="font-size:13px;color:#9aa3b2;">iOS 文件预览无法加载仿真内容</div>
         <div class="stepbox">
           ① 点右上角 <b>「完成」</b> 退出预览<br>
-          ② 长按 <b>player.html</b> → 选 <b style="color:#4f7df9;">「共享」</b><br>
-          ③ 若共享面板无 Safari：<br>
-          &nbsp;&nbsp;&nbsp;改用 <b>Documents / Alook</b> 等本地浏览器打开<br>
-          &nbsp;&nbsp;&nbsp;或访问在线版：<b style="color:#4f7df9;">sky50123.github.io/diangong-app</b>
+          ② 用 Safari 打开在线版：<br>
+          &nbsp;&nbsp;&nbsp;<b style="color:#4f7df9;">sky50123.github.io/diangong-app</b><br>
+          ③ 或装 <b>Documents / Alook</b> 等本地浏览器打开 player.html
         </div>
-        <div class="fine">最简单：直接用 Safari 打开本页网址，再「添加到主屏幕」</div>
+        <div style="font-size:11px;color:#6b7280;">推荐：Safari 打开后「添加到主屏幕」</div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-/* ---------- mode + picker ---------- */
-var CURRENT_MODE = 'exam';
-
-var MODULES = [
-  {sec:'科目一 · 仪表考位（K11）', items:[
-    {ic:'🧰', name:'K11 仪表考位 · 低压', desc:'工器具+仪表+登杆 · K11-01~04 抽题', f:'sims/k11-exam-bench-lv.html'},
-    {ic:'🧰', name:'K11 仪表考位 · 高压', desc:'高压版考位（对照学习）', f:'sims/k11-exam-bench.html'},
-  ]},
-  {sec:'科目二 · 隐患辨识', items:[
-    {ic:'⚠️', name:'作业现场隐患排除 · 低压', desc:'场景拖牌找隐患 · 11 处', f:'sims/safety-p2_lv_lv-safety-p2-universal.html'},
-    {ic:'⚠️', name:'作业现场隐患排除 · 高压', desc:'高压场景', f:'sims/safety-p2_hv_hv-safety-p2-universal.html'},
-    {ic:'🚸', name:'安全标志 quiz', desc:'四类标志辨识练习', f:'sims/safety-sign-quiz.html'},
-  ]},
-  {sec:'科目三 · 接线（K31-K33）', items:[
-    {ic:'🏗️', name:'K31-01 低压配电箱', desc:'1:1 实物接线板', f:'sims/schematic-lv3-k31-01.html'},
-    {ic:'💡', name:'K31-02 电表日光灯', desc:'单相电表+照明电路', f:'sims/schematic-lv3-k31-02.html'},
-    {ic:'🌀', name:'K31-03 三相连续运行', desc:'自锁控制', f:'sims/schematic-lv3-k31-03.html'},
-    {ic:'🔀', name:'K31-04 正反转', desc:'带熔断器', f:'sims/schematic-lv3-k31-04.html'},
-    {ic:'⚙️', name:'K31-05 星三角降压', desc:'三相异步启动', f:'sims/schematic-lv3-k31-05.html'},
-    {ic:'🔧', name:'K32 开关柜维护', desc:'低压配电柜运行维护', f:'sims/k32-maintenance.html'},
-    {ic:'🏗️', name:'K33 临时用电', desc:'施工现场', f:'sims/k33-01.html'},
-    {ic:'🖥️', name:'低压模拟屏', desc:'一次接线仿真', f:'sims/lv-sub3-oneline.html'},
-  ]},
-  {sec:'仪表单件训练', items:[
-    {ic:'🔎', name:'数字万用表', desc:'电压/电阻测量', f:'sims/digit-meter-lv.html'},
-    {ic:'🎚️', name:'钳形电流表', desc:'交流电流', f:'sims/clamp-meter-lv.html'},
-    {ic:'🕰️', name:'指针表①', desc:'MF47C 模拟表', f:'sims/analog-meter-lv-1.html'},
-    {ic:'🔋', name:'兆欧表', desc:'绝缘电阻', f:'sims/megger-lv.html'},
-    {ic:'🌍', name:'接地电阻测试仪', desc:'测接地电阻', f:'sims/ground-meter-lv.html'},
-    {ic:'🛡️', name:'漏保测试仪', desc:'动作电流/时间', f:'sims/lk-v02.html'},
-    {ic:'🔌', name:'插座验测', desc:'验电', f:'sims/outlet-tester-v8.html'},
-  ]},
-  {sec:'科目四 · 应急处置', items:[
-    {ic:'⚡', name:'低压触电处置', desc:'K41-02', f:'sims/shock_lv_k41-02-lv.html'},
-    {ic:'🫀', name:'心肺复苏 CPR', desc:'K42', f:'sims/cpr-canvas.html'},
-    {ic:'🩹', name:'包扎训练', desc:'K4401', f:'sims/bandage-canvas.html'},
-  ]},
-  {sec:'其他', items:[
-    {ic:'📋', name:'操作票', desc:'作业票填写', f:'sims/operation-paper-mobile.html'},
-  ]},
+/* ================= 15 道题 ================= */
+var QUESTIONS = [
+  {code:'030101-K11-01', subj:'科目一', name:'安全工器具与仪器仪表 01', desc:'安全帽/安全带/绝缘鞋/登杆/仪表识别', f:'sims/k11-exam-bench-lv.html'},
+  {code:'030101-K11-02', subj:'科目一', name:'安全工器具与仪器仪表 02', desc:'绝缘手套/接地线/万用表/钳形表', f:'sims/k11-exam-bench-lv.html'},
+  {code:'030101-K11-03', subj:'科目一', name:'安全工器具与仪器仪表 03', desc:'仪表读数与安全标志', f:'sims/k11-exam-bench-lv.html'},
+  {code:'030101-K11-04', subj:'科目一', name:'安全工器具与仪器仪表 04', desc:'综合仪表操作', f:'sims/k11-exam-bench-lv.html'},
+  {code:'030101-K21-01', subj:'科目二', name:'作业现场风险隐患辨识', desc:'电动工具/登杆/临电场景拖牌找隐患', f:'sims/safety-p2_lv_lv-safety-p2-universal.html'},
+  {code:'030101-K31-01', subj:'科目三', name:'低压配电箱安装接线', desc:'主开关/漏保/插座/照明 1:1 接线板', f:'sims/schematic-lv3-k31-01.html'},
+  {code:'030101-K31-02', subj:'科目三', name:'单相电表 + 日光灯接线', desc:'电能表/镇流器/启辉器/灯座', f:'sims/schematic-lv3-k31-02.html'},
+  {code:'030101-K31-03', subj:'科目三', name:'三相异步电动机连续运行', desc:'KM 自锁控制电路', f:'sims/schematic-lv3-k31-03.html'},
+  {code:'030101-K31-04', subj:'科目三', name:'带熔断器正反转控制', desc:'双重互锁正反转', f:'sims/schematic-lv3-k31-04.html'},
+  {code:'030101-K31-05', subj:'科目三', name:'三相电动机星三角启动', desc:'Y-Δ 降压启动', f:'sims/schematic-lv3-k31-05.html'},
+  {code:'030101-K32-01', subj:'科目三', name:'低压配电柜运行维护', desc:'进线柜/补偿柜/出线柜巡视', f:'sims/k32-maintenance.html'},
+  {code:'030101-K33-01', subj:'科目三', name:'施工现场临时用电', desc:'TN-S 三级配电两级保护', f:'sims/k33-01.html'},
+  {code:'K41-01', subj:'科目四', name:'低压触电事故现场应急处理', desc:'判断环境→脱离电源→移通风处→120', f:'sims/shock_lv_k41-02-lv.html'},
+  {code:'K42-01', subj:'科目四', name:'单人徒手心肺复苏', desc:'判断意识/胸外按压/人工呼吸 30:2', f:'sims/cpr-canvas.html'},
+  {code:'K44-01', subj:'科目四', name:'创伤包扎', desc:'止血包扎操作（灭火器模块源站已下线）', f:'sims/bandage-canvas.html'}
 ];
 
-/* exam-mode: only modules that simulate real exam flow */
-var EXAM_SET = [
-  'sims/k11-exam-bench-lv.html',
-  'sims/k11-exam-bench.html',
-  'sims/safety-p2_lv_lv-safety-p2-universal.html',
-  'sims/safety-p2_hv_hv-safety-p2-universal.html',
-  'sims/schematic-lv3-k31-01.html','sims/schematic-lv3-k31-02.html',
-  'sims/schematic-lv3-k31-03.html','sims/schematic-lv3-k31-04.html',
-  'sims/schematic-lv3-k31-05.html','sims/k32-maintenance.html','sims/k33-01.html',
-  'sims/shock_lv_k41-02-lv.html','sims/cpr-canvas.html',
-];
+var SUBJ_ORDER = ['科目一','科目二','科目三','科目四'];
+var SUBJ_DESC = {
+  '科目一':'安全用具使用（K11 仪表考位）',
+  '科目二':'作业现场安全隐患排除',
+  '科目三':'安全操作技术（接线/维护/临电）',
+  '科目四':'作业现场应急处置'
+};
 
-function isExamAllowed(f){ return EXAM_SET.indexOf(f) >= 0; }
+/* ================= 状态 ================= */
+var currentExam = [];      // 抽出的 4 题
+var examDone = {};         // code -> true
+var pracDone = JSON.parse(localStorage.getItem('dg_prac_done') || '{}');
 
-function startMode(mode){
-  CURRENT_MODE = mode;
-  document.getElementById('home').classList.add('hidden');
-  openPicker(mode);
-}
-function openPicker(mode){
-  var exam = mode === 'exam';
-  document.getElementById('pickerTitle').textContent = exam ? '模拟考试 · 选择考位' : '练习模式 · 选择模块';
-  document.getElementById('pickerMode').textContent = exam ? '考试模式' : '自由练习';
-  var list = document.getElementById('pickerList');
-  list.innerHTML = '';
-  MODULES.forEach(function(sec){
-    var items = sec.items.filter(function(it){
-      return !exam || isExamAllowed(it.f);
-    });
-    if(!items.length) return;
-    var s = document.createElement('div');
-    s.className = 'sec'; s.textContent = sec.sec;
-    list.appendChild(s);
-    if(exam && sec.sec.indexOf('仪表单件') >= 0){
-      var note = document.createElement('div');
-      note.className = 'sec-exp';
-      note.textContent = '考试模式下仪表单件不单独开放——仪表在 K11 考位流程内选择使用。练习模式可单独训练。';
-      list.appendChild(note);
-    }
-    items.forEach(function(it){
-      var d = document.createElement('div');
-      d.className = 'item';
-      d.innerHTML = '<div class="ic">'+it.ic+'</div><div class="tx"><h3>'+it.name+'</h3><p>'+it.desc+'</p></div><div class="go">›</div>';
-      d.onclick = function(){ go(it.f, it.name); };
-      list.appendChild(d);
-    });
+/* ================= 页面切换 ================= */
+function showPane(id){
+  ['paneHome','paneExam','panePractice'].forEach(function(p){
+    document.getElementById(p).classList.toggle('show', p === id);
   });
-  document.getElementById('picker').classList.add('show');
 }
-function backHome(){
-  document.getElementById('picker').classList.remove('show');
-  document.getElementById('home').classList.remove('hidden');
-  document.getElementById('curPage').textContent = '首页';
-}
-function home(){
-  document.getElementById('picker').classList.remove('show');
-  document.getElementById('home').classList.remove('hidden');
+function goHome(){
+  showPane('paneHome');
   document.getElementById('f').src = 'about:blank';
   document.getElementById('curPage').textContent = '首页';
 }
+function backFromSim(){
+  document.getElementById('f').src = 'about:blank';
+  showPane(currentContext === 'exam' ? 'paneExam' : 'panePractice');
+}
+var currentContext = 'home';
 
-/* ---------- iframe nav ---------- */
-function go(f, name){
-  document.getElementById('picker').classList.remove('show');
-  document.getElementById('home').classList.add('hidden');
-  document.getElementById('f').src = f;
-  document.getElementById('curPage').textContent = name || f;
-  // QuickLook 兜底：iframe 没加载过 → 整页跳转
-  var fEl = document.getElementById('f');
-  setTimeout(function(){
-    if (!fEl.dataset.loaded) { try { location.href = f; } catch(e){} }
-  }, 2500);
+/* ================= 模拟考试：四科各抽一题 ================= */
+function pickOne(arr){
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function buildExam(){
+  currentExam = [];
+  examDone = {};
+  SUBJ_ORDER.forEach(function(subj){
+    var pool = QUESTIONS.filter(function(q){ return q.subj === subj; });
+    if (pool.length) currentExam.push(pickOne(pool));
+  });
+}
+function openExam(){
+  currentContext = 'exam';
+  buildExam();
+  renderExam();
+  showPane('paneExam');
+}
+function reseedExam(){
+  buildExam();
+  renderExam();
+}
+function renderExam(){
+  var box = document.getElementById('examList');
+  box.innerHTML = '';
+  var info = document.createElement('div');
+  info.className = 'pinfo';
+  info.innerHTML = '<h3>本次试卷 · 共 ' + currentExam.length + ' 题</h3>' +
+    '<div class="meta">按正规考试流程：四个科目各随机抽取 1 题<br>' +
+    '建议顺序作答，<b>先完成后提交</b>；每题独立计分，80 分合格<br>' +
+    '卷号：' + Date.now().toString().slice(-6) + '</div>';
+  box.appendChild(info);
+
+  currentExam.forEach(function(q, i){
+    var d = document.createElement('div');
+    d.className = 'qitem' + (examDone[q.code] ? ' done' : '');
+    d.innerHTML =
+      '<div class="qh"><span class="qn">第 ' + (i+1) + ' 题</span>' +
+      '<span class="qt">' + q.name + '</span></div>' +
+      '<div class="qd">' + SUBJ_DESC[q.subj] + ' · ' + q.desc + '</div>' +
+      '<div class="qcode">' + q.code + '</div>' +
+      '<div class="go-btn">' + (examDone[q.code] ? '✓ 已完成 · 再看一次' : '进入作答 →') + '</div>';
+    d.onclick = function(){
+      activeExamIndex = i;
+      go(q.f, '第 ' + (i+1) + ' 题 · ' + q.name);
+    };
+    box.appendChild(d);
+  });
+}
+var activeExamIndex = 0;
+function startExamQ(){
+  if(!currentExam.length) return;
+  // 找第一道未完成的
+  for(var i=0;i<currentExam.length;i++){
+    if(!examDone[currentExam[i].code]){ activeExamIndex = i; break; }
+  }
+  var q = currentExam[activeExamIndex];
+  go(q.f, '第 ' + (activeExamIndex+1) + ' 题 · ' + q.name);
 }
 
-/* ---------- zoom ---------- */
+/* ================= 练习模式：15 题平铺 ================= */
+function openPractice(){
+  currentContext = 'practice';
+  renderPractice();
+  showPane('panePractice');
+}
+function renderPractice(){
+  var box = document.getElementById('practiceList');
+  box.innerHTML = '<div class="hint">15 道实操题全部开放，点任意一题进入练习。练习不限顺序与时长，可反复操作。</div>';
+  SUBJ_ORDER.forEach(function(subj){
+    var pool = QUESTIONS.filter(function(q){ return q.subj === subj; });
+    if(!pool.length) return;
+    var sec = document.createElement('div');
+    sec.className = 'gsec';
+    sec.innerHTML = subj + ' <span>' + pool.length + ' 题</span>';
+    box.appendChild(sec);
+    pool.forEach(function(q){
+      var d = document.createElement('div');
+      d.className = 'card' + (pracDone[q.code] ? ' done' : '');
+      d.innerHTML =
+        '<div class="no">' + (pracDone[q.code] ? '✓' : q.code.replace(/[^0-9]/g,'').slice(-2)) + '</div>' +
+        '<div class="tx"><h3>' + q.name + '</h3><p>' + q.code + ' · ' + q.desc + '</p></div>' +
+        '<div class="go">›</div>';
+      d.onclick = function(){
+        pracDone[q.code] = true;
+        localStorage.setItem('dg_prac_done', JSON.stringify(pracDone));
+        go(q.f, q.name);
+      };
+      box.appendChild(d);
+    });
+  });
+}
+
+/* ================= iframe ================= */
+function go(f, name){
+  document.getElementById('paneHome').classList.remove('show');
+  document.getElementById('paneExam').classList.remove('show');
+  document.getElementById('panePractice').classList.remove('show');
+  var fEl = document.getElementById('f');
+  fEl.dataset.loaded = '';
+  navPending = true;
+  fEl.src = f;
+  document.getElementById('curPage').textContent = name || f;
+  setTimeout(function(){
+    if (!fEl.dataset.loaded) { try { location.href = f; } catch(e){} }
+  }, 3500);
+}
+
+/* ================= zoom ================= */
 var scale = 1;
-function applyZoom(){ document.getElementById('frame').style.transform = 'scale('+scale+')';
-  document.getElementById('zv').textContent = Math.round(scale*100)+'%'; }
+function applyZoom(){
+  document.getElementById('frame').style.transform = 'scale(' + scale + ')';
+  document.getElementById('zv').textContent = Math.round(scale*100) + '%';
+}
 function zoom(d){ scale = d===0 ? 1 : Math.min(2, Math.max(0.4, scale+d)); applyZoom(); }
 document.addEventListener('wheel', function(e){
   if(e.ctrlKey){ e.preventDefault(); zoom(e.deltaY>0?-0.05:0.05); }
 }, {passive:false});
 
-/* ---------- iframe load tracking + QuickLook detect ---------- */
+/* ================= init ================= */
 document.addEventListener('DOMContentLoaded', function(){
   var f = document.getElementById('f');
   if(f) f.addEventListener('load', function(){ f.dataset.loaded = '1'; });
 });
+/* QuickLook 检测：只有真正发起过 iframe 导航、且 6 秒后仍未 load，才判定为预览沙箱 */
+var navPending = false;
 window.addEventListener('load', function(){
   setTimeout(function(){
+    if (!navPending) return;
     var f = document.getElementById('f');
-    // 只有当用户已经离开首页（iframe 被使用）才检测
-    var homeEl = document.getElementById('home');
-    if(homeEl.classList.contains('hidden') && f && !f.dataset.loaded){
+    if (f && !f.dataset.loaded) {
       document.getElementById('qlBanner').style.display = 'flex';
     }
-  }, 4000);
+  }, 6000);
 });
 </script>
 </body>
