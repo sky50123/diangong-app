@@ -947,12 +947,16 @@ img{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user
 </script>
 
 
+
+
+
 <script>
-/* __PRACTICE_MODE__ : ?mode=practice 时显示题目选择而非随机抽题 */
+/* __PRACTICE_V2__ : 练习模式 URL 参数 → 自动切到指定题目 */
 (function(){
   'use strict';
-  var isPractice = /[?&]mode=practice/.test(location.search);
-  if (!isPractice) return;
+  var m = location.search.match(/[?&]q=(K11-0\d)/);
+  var target = m ? m[1] : null;
+  if (!target) return;   /* 没有 q 参数就不干预 */
 
   var TITLES = {
     'K11-01': '安全工器具与仪器仪表 01（穿戴/登杆/验电/插座）',
@@ -961,51 +965,79 @@ img{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user
     'K11-04': '安全工器具与仪器仪表 04（综合仪表操作）'
   };
 
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      try{
-        /* 找到开始抽题按钮，替换为题目选择面板 */
-        var btns = Array.prototype.slice.call(document.querySelectorAll('button'));
-        var startBtn = btns.filter(function(b){ return /开始抽题/.test(b.textContent); })[0];
-        if (!startBtn) return;
+  function getCurCode(){
+    /* 从顶部 chip 或标题读当前题号 */
+    var els = Array.prototype.slice.call(document.querySelectorAll('span,div,h1,h2'));
+    for (var i = 0; i < els.length; i++) {
+      var mm = (els[i].textContent||'').match(/K11-0(\d)/);
+      if (mm && els[i].offsetParent !== null) return 'K11-0' + mm[1];
+    }
+    return null;
+  }
 
-        var wrap = startBtn.parentElement;
-        /* 创建题目选择面板 */
-        var panel = document.createElement('div');
-        panel.style.cssText = 'max-width:340px;margin:16px auto;background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)';
-        panel.innerHTML = '<div style="font-size:14px;font-weight:700;color:#185FA5;margin-bottom:10px">练习模式 · 选择题目</div>';
-        Object.keys(TITLES).forEach(function(code, i){
-          var item = document.createElement('div');
-          item.style.cssText = 'padding:11px 14px;border:1px solid #dfe6ee;border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:13px;color:#333;transition:.15s';
-          item.innerHTML = '<b style="color:#185FA5">K11-0' + (i+1) + '</b>　' + TITLES[code];
-          item.onmouseenter = function(){ item.style.background = '#f0f6ff'; };
-          item.onmouseleave = function(){ item.style.background = '#fff'; };
-          item.onclick = function(){
-            /* 调用页面自身的抽题函数并指定题目编号 */
-            try {
-              /* 常见抽题函数名（混淆后可能不同），先试全局 */
-              var w = window;
-              if (typeof w.pickQuestion === 'function') { w.pickQuestion(code); }
-              else if (typeof w.startQuestion === 'function') { w.startQuestion(code); }
-              else if (typeof w.loadQuestion === 'function') { w.loadQuestion(code); }
-              else {
-                /* 兜底：模拟点击开始抽题（还是随机，但至少告知用户） */
-                startBtn.click();
-                panel.innerHTML = '<div style="padding:10px;color:#c00;font-size:12px">该页面不支持指定题目，已随机抽题（这是页面原设计）</div>';
-              }
-            } catch(e){}
-          };
-          panel.appendChild(item);
-        });
-        /* 隐藏抽题按钮，显示选择面板 */
-        startBtn.style.display = 'none';
-        wrap.insertBefore(panel, startBtn);
-        /* 修改页面说明 */
-        var subTitle = document.querySelector('.hd p, header p, .sub');
-        if (subTitle) subTitle.textContent = '练习模式 · 从下方选择题目开始';
-      }catch(e){ console.warn('practice mode init fail', e); }
-    }, 800);
+  function clickSwitch(){
+    var btns = Array.prototype.slice.call(document.querySelectorAll('button'));
+    for (var i = 0; i < btns.length; i++) {
+      if (/^换题$/.test((btns[i].textContent||'').trim()) && btns[i].offsetParent !== null) {
+        btns[i].click();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function showTip(txt, color){
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:99999;' +
+      'background:' + (color||'#185FA5') + ';color:#fff;padding:10px 20px;border-radius:20px;' +
+      'font-size:13px;font-weight:600;box-shadow:0 4px 15px rgba(0,0,0,.3)';
+    t.textContent = txt;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2500);
+  }
+
+  function trySwitch(attempt){
+    if (attempt > 8) { showTip('未能定位到 ' + target, '#c00'); return; }
+    var cur = getCurCode();
+    if (cur === target) {
+      showTip('✓ 已定位到 ' + target + ' ' + (TITLES[target]||''));
+      return;
+    }
+    if (clickSwitch()) {
+      setTimeout(function(){ trySwitch(attempt + 1); }, 600);
+    } else {
+      /* 可能还没进台面，等一等再试 */
+      setTimeout(function(){ trySwitch(attempt); }, 800);
+    }
+  }
+
+  window.addEventListener('load', function(){
+    /* 等页面稳定后自动开始抽题流程 */
+    setTimeout(function(){
+      var btns = Array.prototype.slice.call(document.querySelectorAll('button'));
+      var start = btns.filter(function(b){ return /开始抽题/.test(b.textContent); })[0];
+      if (start) start.click();
+      /* 然后循环点"放入操作台"/"确认使用" */
+      var dialogSteps = 0;
+      var dlg = setInterval(function(){
+        dialogSteps++;
+        if (dialogSteps > 10) { clearInterval(dlg); startSwitch(); return; }
+        var btns = Array.prototype.slice.call(document.querySelectorAll('button')).filter(function(b){ return b.offsetParent !== null; });
+        var put = btns.find(function(b){ return /放入操作台/.test(b.textContent); });
+        var use = btns.find(function(b){ return /确认使用/.test(b.textContent); });
+        if (put) { put.click(); return; }
+        if (use) { use.click(); return; }
+        /* 没弹窗了 = 已进台面 */
+        clearInterval(dlg);
+        setTimeout(function(){ startSwitch(); }, 500);
+      }, 700);
+    }, 600);
   });
+
+  function startSwitch(){
+    showTip('练习模式 · 正在定位 ' + target + ' ...');
+    trySwitch(0);
+  }
 })();
 </script>
 
