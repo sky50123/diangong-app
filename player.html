@@ -360,9 +360,26 @@ function go(f, name){
   fEl.src = f;
   document.getElementById('curPage').textContent = name || f;
   setTimeout(function(){
-    if (!fEl.dataset.loaded) { try { location.href = f; } catch(e){} }
+    if (!fEl.dataset.loaded) {
+      /* 兜底：3.5s 未加载才整页跳转，且只跳一次（防死循环） */
+      if (!window.__fellBack) {
+        window.__fellBack = true;
+        try { location.href = f; } catch(e){}
+      }
+    }
   }, 3500);
 }
+
+/* 仿真页内的「‹ 返回」按钮 → postMessage 回来 */
+window.addEventListener('message', function(e){
+  if (e.data && e.data.__dshBack) {
+    document.getElementById('f').src = 'about:blank';
+    navPending = false;
+    showPane(currentContext === 'exam' ? 'paneExam' : 'panePractice');
+    document.getElementById('curPage').textContent =
+      currentContext === 'exam' ? '模拟考试' : '练习模式';
+  }
+});
 
 /* ================= zoom ================= */
 var scale = 1;
