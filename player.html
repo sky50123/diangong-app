@@ -3,73 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>仿真 · 手机比例容器</title>
+<title>低压电工实操 · 首页</title>
 <style>
-:root{--c1:#4f7df9;--c2:#8b5cf6;}
-*{box-sizing:border-box;margin:0;padding:0;}
+:root{--c1:#4f7df9;--c2:#8b5cf6;--exam:#e24b4a;--prac:#22c55e;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
 body{background:#1a1f2b;display:flex;align-items:center;justify-content:center;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;overflow:hidden;}
-/* phone frame */
-.frame{position:relative;display:flex;flex-direction:column;align-items:center;}
+
+/* ---------- phone frame ---------- */
+.frame{position:relative;}
 .bezel{background:#0d1117;border-radius:36px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px #2a3040;}
 .screen{width:390px;height:844px;border-radius:26px;overflow:hidden;background:#eef1f6;position:relative;}
 .screen iframe{width:390px;height:844px;border:none;display:block;}
-/* side controls */
+
+/* ---------- HOME overlay (inside .screen) ---------- */
+.home{position:absolute;inset:0;z-index:50;background:#eef1f6;display:flex;flex-direction:column;overflow-y:auto;}
+.home.hidden{display:none;}
+.hd{background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;padding:34px 24px 26px;text-align:center;}
+.hd h1{font-size:22px;letter-spacing:.05em;}
+.hd p{font-size:13px;opacity:.85;margin-top:6px;}
+.modes{display:flex;flex-direction:column;gap:16px;padding:26px 20px;}
+.mode{border-radius:18px;padding:26px 22px;cursor:pointer;color:#fff;transition:.15s;position:relative;overflow:hidden;}
+.mode:active{transform:scale(.98);}
+.mode h2{font-size:20px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.mode p{font-size:13px;opacity:.92;line-height:1.8;}
+.mode .badge{position:absolute;top:16px;right:16px;font-size:11px;background:rgba(255,255,255,.25);border-radius:20px;padding:4px 12px;}
+.mode.exam{background:linear-gradient(135deg,#e24b4a,#b91c1c);}
+.mode.prac{background:linear-gradient(135deg,#22c55e,#15803d);}
+.mode.theory{background:linear-gradient(135deg,var(--c1),var(--c2));}
+.mode-info{margin:0 20px 16px;background:#fff;border-radius:14px;padding:16px 18px;font-size:12px;color:#666;line-height:1.9;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.mode-info b{color:#185FA5;}
+
+/* ---------- module picker sheet ---------- */
+.sheet{position:absolute;inset:0;z-index:60;background:#eef1f6;display:none;flex-direction:column;}
+.sheet.show{display:flex;}
+.sheet .shd{background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;padding:24px 20px;display:flex;align-items:center;gap:12px;}
+.sheet .shd .back{font-size:20px;cursor:pointer;padding:0 6px;}
+.sheet .shd h2{font-size:17px;font-weight:600;}
+.sheet .shd .sub{margin-left:auto;font-size:11px;opacity:.85;}
+.sheet .list{flex:1;overflow-y:auto;padding:14px;}
+.sec{font-size:12px;color:#888;font-weight:700;margin:10px 4px 8px;letter-spacing:.03em;}
+.item{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.15s;}
+.item:active{transform:scale(.98);opacity:.8;}
+.item .ic{font-size:24px;flex-shrink:0;}
+.item .tx{flex:1;min-width:0;}
+.item .tx h3{font-size:14px;color:#222;}
+.item .tx p{font-size:11px;color:#999;margin-top:2px;}
+.item .go{color:#c1c7d0;font-size:18px;flex-shrink:0;}
+.item.missing{opacity:.4;}
+.sec-exp{background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;font-size:11px;border-radius:10px;padding:8px 12px;margin:0 0 8px;line-height:1.7;}
+
+/* ---------- side controls (desktop) ---------- */
 .side{position:fixed;left:24px;top:50%;transform:translateY(-50%);background:#12161f;border-radius:16px;padding:16px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.4);}
-.side h3{color:#8b93a5;font-size:12px;font-weight:600;margin-bottom:4px;letter-spacing:.05em;}
+.side h3{color:#8b93a5;font-size:12px;font-weight:600;margin-bottom:4px;}
 .side button{background:#1f2633;border:1px solid #2e3746;color:#d0d5de;padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer;text-align:left;transition:.15s;min-width:150px;}
-.side button:hover{background:#273042;border-color:#3d4859;}
-.side button.on{background:#4f7df9;border-color:#4f7df9;color:#fff;}
-.side .url{margin-top:8px;background:#0d1117;border:1px solid #2e3746;border-radius:10px;color:#9aa3b2;font-size:11px;padding:8px 10px;word-break:break-all;max-width:170px;}
-/* scale control */
+.side button:hover{background:#273042;}
 .zoom{position:fixed;right:24px;top:50%;transform:translateY(-50%);background:#12161f;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.4);}
 .zoom .lbl{color:#8b93a5;font-size:11px;}
 .zoom button{width:40px;height:40px;border-radius:50%;border:1px solid #2e3746;background:#1f2633;color:#fff;font-size:18px;cursor:pointer;}
-.zoom button:hover{background:#273042;}
 .zoom .val{color:#e8ecf3;font-size:15px;font-weight:700;}
 .top{position:fixed;top:18px;left:50%;transform:translateX(-50%);color:#8b93a5;font-size:13px;background:#12161f;padding:8px 18px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.4);}
 .top b{color:#e8ecf3;}
+
+/* QuickLook banner */
+#qlBanner{display:none;position:absolute;inset:0;z-index:9999;background:#12161f;color:#fff;padding:40px 24px;text-align:center;flex-direction:column;justify-content:center;gap:16px;}
+#qlBanner h2{font-size:20px;font-weight:800;}
+#qlBanner .stepbox{background:#1f2633;border-radius:14px;padding:18px;text-align:left;font-size:13px;line-height:2.2;}
+#qlBanner .stepbox b{color:#4f7df9;}
+#qlBanner .fine{font-size:11px;color:#6b7280;}
+
+@media (max-width:820px){
+  .side,.zoom,.top{display:none;}
+  body{overflow:auto;}
+}
 </style>
 </head>
 <body>
-<div class="top">仿真运行器 · <b id="curPage">-</b> · 手机比例 390×844</div>
+<div class="top">低压电工实操实训包 · <b id="curPage">首页</b></div>
 
 <div class="side">
-  <h3>实训模块</h3>
-  <button onclick="go('sims/k11-exam-bench-lv.html')">🧰 K11 仪表考位(低压)</button>
-  <button onclick="go('sims/k11-exam-bench.html')">🧰 K11 仪表考位(高压)</button>
-  <button onclick="go('sims/safety-tools-train.html')">⛑️ 安全用具训练</button>
-  <button onclick="go('sims/safety-p2_lv_lv-safety-p2-universal.html')">⚠️ 科目二隐患(低压)</button>
-  <button onclick="go('sims/safety-p2_hv_hv-safety-p2-universal.html')">⚠️ 科目二隐患(高压)</button>
-  <button onclick="go('sims/safety-sign-quiz.html')">🚸 安全标志 quiz</button>
-  <button onclick="go('sims/schematic-lv3-k31-01.html')">🏗️ K31-01 配电箱</button>
-  <button onclick="go('sims/schematic-lv3-k31-02.html')">💡 K31-02 电表日光灯</button>
-  <button onclick="go('sims/schematic-lv3-k31-03.html')">🌀 K31-03 三相连续</button>
-  <button onclick="go('sims/schematic-lv3-k31-04.html')">🔀 K31-04 正反转</button>
-  <button onclick="go('sims/schematic-lv3-k31-05.html')">⚙️ K31-05 星三角</button>
-  <button onclick="go('sims/k32-maintenance.html')">🔧 K32 开关柜维护</button>
-  <button onclick="go('sims/k33-01.html')">🏗️ K33 临时用电</button>
-  <button onclick="go('sims/lv-sub3-oneline.html')">🖥️ 低压模拟屏</button>
-  <button onclick="go('sims/digit-meter-lv.html')">🔎 数字万用表</button>
-  <button onclick="go('sims/clamp-meter-lv.html')">🎚️ 钳形电流表</button>
-  <button onclick="go('sims/analog-meter-lv-1.html')">🕰️ 指针表①</button>
-  <button onclick="go('sims/megger-lv.html')">🔋 兆欧表</button>
-  <button onclick="go('sims/ground-meter-lv.html')">🌍 接地电阻</button>
-  <button onclick="go('sims/lk-v02.html')">🛡️ 漏保测试</button>
-  <button onclick="go('sims/outlet-tester-v8.html')">🔌 插座验测</button>
-  <button onclick="go('sims/cpr-canvas.html')">🫀 心肺复苏</button>
-  <button onclick="go('sims/shock_lv_k41-02-lv.html')">⚡ 低压触电处置</button>
-  <button onclick="go('sims/bandage-canvas.html')">🩹 包扎训练</button>
-  <button onclick="go('sims/operation-paper-mobile.html')">📋 操作票</button>
-  <div class="url" id="urlBox">sims/</div>
-</div>
-
-<div class="frame">
-  <div class="bezel">
-    <div class="screen">
-      <iframe id="f" src="sims/k11-exam-bench-lv.html" allow="fullscreen"></iframe>
-    </div>
-  </div>
+  <h3>快捷直达</h3>
+  <button onclick="home()">🏠 返回首页</button>
+  <button onclick="go('sims/k11-exam-bench-lv.html')">🧰 K11 仪表(低压)</button>
+  <button onclick="go('sims/k11-exam-bench.html')">🧰 K11 仪表(高压)</button>
+  <button onclick="go('sims/schematic-lv3-k31-02.html')">💡 K31-02 日光灯</button>
+  <button onclick="go('sims/schematic-lv3-k31-03.html')">🌀 K31-03 三相</button>
+  <button onclick="go('index.html')">📖 题库刷题</button>
 </div>
 
 <div class="zoom">
@@ -80,92 +99,216 @@ body{background:#1a1f2b;display:flex;align-items:center;justify-content:center;f
   <button onclick="zoom(0)" style="width:auto;padding:0 10px;height:30px;font-size:12px;border-radius:8px;">重置</button>
 </div>
 
-<script>
-var scale = 1;
-var frame = document.querySelector('.frame');
-function applyZoom(){
-  frame.style.transform = 'scale(' + scale + ')';
-  document.getElementById('zv').textContent = Math.round(scale*100) + '%';
-}
-function zoom(d){
-  scale = d === 0 ? 1 : Math.min(2, Math.max(0.4, scale + d));
-  applyZoom();
-}
-function go(f){
-  // QuickLook 兜底：iframe 没成功加载过 → 直接整页跳转（在预览里也能打开子页面）
-  var fEl = document.getElementById('f');
-  if (!fEl || !fEl.dataset.loaded) {
-    try { location.href = f; } catch(e) {}
-    document.getElementById('curPage').textContent = f;
-    document.getElementById('urlBox').textContent = f;
-    return;
-  }
-  fEl.src = f;
-  document.getElementById('curPage').textContent = f;
-  document.getElementById('urlBox').textContent = f;
-  document.querySelectorAll('.side button').forEach(function(b){ b.classList.remove('on'); });
-  if (event && event.target) event.target.classList.add('on');
-}
-// scroll wheel zoom on frame
-document.addEventListener('wheel', function(e){
-  if (e.ctrlKey) { e.preventDefault(); zoom(e.deltaY > 0 ? -0.05 : 0.05); }
-}, {passive:false});
-// keyboard: iframe needs focus for page interaction; hint
-go('sims/k11-exam-bench-lv.html');
-</script>
-<div id="qlBanner" style="display:none;position:fixed;inset:0;z-index:9999;background:#12161f;color:#fff;padding:40px 24px;text-align:center;flex-direction:column;justify-content:center;gap:16px;">
-  <div style="font-size:22px;font-weight:800;">检测到「文件」预览模式</div>
-  <div style="font-size:14px;line-height:2;color:#9aa3b2;">
-    iOS「文件」App 的预览不加载仿真内容。<br>
-    请按下面步骤用 Safari 打开：
+<div class="frame" id="frame">
+  <div class="bezel">
+    <div class="screen" id="screen">
+      <iframe id="f" src="about:blank" allow="fullscreen"></iframe>
+
+      <!-- ===== HOME ===== -->
+      <div class="home" id="home">
+        <div class="hd">
+          <h1>低压电工实操实训包</h1>
+          <p>2026年版考试大纲 · 离线全功能</p>
+        </div>
+        <div class="modes">
+          <div class="mode exam" onclick="startMode('exam')">
+            <div class="badge">考核标准</div>
+            <h2>📝 模拟考试</h2>
+            <p>按真实考试流程抽题组卷：随机抽 1 套考题（K11-01~04 / 场景题）<br>
+            考试模式：无提示环、无顶部提示带、测点不放大<br>
+            选错仪表 / 带电接线会被安全联锁否决<br>
+            考题不重试，成绩当场判定</p>
+          </div>
+          <div class="mode prac" onclick="startMode('prac')">
+            <div class="badge">自由练习</div>
+            <h2>🎯 练习模式</h2>
+            <p>全部模块自由进入、不限时长：<br>
+            K11 仪表考位 · 科目二隐患辨识 · K31 接线五题<br>
+            K32 开关柜 · K33 临时用电 · 应急处置<br>
+            可开提示、可换题、可反复操作直到熟练</p>
+          </div>
+          <div class="mode theory" onclick="go('index.html')">
+            <div class="badge">题库</div>
+            <h2>📖 实操题库</h2>
+            <p>15 道实操考题原文 + 完整评分标准表<br>
+            含电路图 / 接线图，支持掌握标记与重点标记</p>
+          </div>
+        </div>
+        <div class="mode-info">
+          <b>考试 vs 练习的区别：</b>两种模式进入的都是同一套仿真，差别在页内开关——
+          模拟考试从「考试模式·逻辑否决」入口进入（右上角红标），页面自动关闭提示；
+          练习模式从普通入口进入，提示默认可开，适合边学边练。
+        </div>
+      </div>
+
+      <!-- ===== MODULE PICKER ===== -->
+      <div class="sheet" id="picker">
+        <div class="shd">
+          <span class="back" onclick="backHome()">‹</span>
+          <h2 id="pickerTitle">选择模块</h2>
+          <span class="sub" id="pickerMode"></span>
+        </div>
+        <div class="list" id="pickerList"></div>
+      </div>
+
+      <!-- QuickLook banner -->
+      <div id="qlBanner">
+        <h2>检测到「文件」预览模式</h2>
+        <div style="font-size:14px;color:#9aa3b2;">iOS 文件预览不加载仿真内容，请用 Safari：</div>
+        <div class="stepbox">
+          ① 点右上角 <b>「完成」</b> 退出预览<br>
+          ② 长按 <b>player.html</b> → 选 <b style="color:#4f7df9;">「共享」</b><br>
+          ③ 若共享面板无 Safari：<br>
+          &nbsp;&nbsp;&nbsp;改用 <b>Documents / Alook</b> 等本地浏览器打开<br>
+          &nbsp;&nbsp;&nbsp;或访问在线版：<b style="color:#4f7df9;">sky50123.github.io/diangong-app</b>
+        </div>
+        <div class="fine">最简单：直接用 Safari 打开本页网址，再「添加到主屏幕」</div>
+      </div>
+    </div>
   </div>
-  <div style="background:#1f2633;border-radius:14px;padding:18px;text-align:left;font-size:14px;line-height:2.2;">
-    ① 点屏幕右上角 <b style="color:#4f7df9;">「完成」</b> 退出预览<br>
-    ② 回到文件列表，长按 <b>player.html</b><br>
-    ③ 选 <b style="color:#4f7df9;">「共享」</b>（分享图标）<br>
-    ④ 在弹出的面板里选 <b style="color:#4f7df9;">Safari</b><br>
-    &nbsp;&nbsp;&nbsp;（若没有 Safari，点「更多」启用）
-  </div>
-  <div style="font-size:12px;color:#6b7280;">之后可在此页面「添加到主屏幕」，像 App 一样使用</div>
 </div>
+
 <script>
-(function(){
-  // Quick Look 检测：QuickLook 沙箱里 iframe 加载子目录文件会失败
-  function inQuickLook(){
-    try {
-      var f = document.getElementById('f');
-      if (!f) return true;
-      // QuickLook 下 iframe 的 contentDocument 访问会抛异常或为空
-      var loaded = false;
-      try {
-        f.addEventListener('load', function(){ loaded = true; });
-        // 已在页面加载后 3 秒仍未触发 load 则视为预览沙箱
-      } catch(e){ return true; }
-      return false;
-    } catch(e){ return true; }
-  }
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      var f = document.getElementById('f');
-      var bad = false;
-      try {
-        // 尝试访问 iframe 内部：QuickLook 会抛 SecurityError 或一直 about:blank
-        var doc = f.contentDocument || f.contentWindow.document;
-        if (!doc || doc.location.href === 'about:blank') bad = true;
-      } catch(e) { bad = false; } // cross-origin file:// 也可能抛异常，但正常 Safari 允许同目录
-      // 更可靠：检查 iframe 是否触发过 load 且渲染了标题
-      if (!f.dataset.loaded) bad = true;
-      if (bad) {
-        var b = document.getElementById('qlBanner');
-        if (b) b.style.display = 'flex';
-      }
-    }, 3000);
+/* ---------- mode + picker ---------- */
+var CURRENT_MODE = 'exam';
+
+var MODULES = [
+  {sec:'科目一 · 仪表考位（K11）', items:[
+    {ic:'🧰', name:'K11 仪表考位 · 低压', desc:'工器具+仪表+登杆 · K11-01~04 抽题', f:'sims/k11-exam-bench-lv.html'},
+    {ic:'🧰', name:'K11 仪表考位 · 高压', desc:'高压版考位（对照学习）', f:'sims/k11-exam-bench.html'},
+  ]},
+  {sec:'科目二 · 隐患辨识', items:[
+    {ic:'⚠️', name:'作业现场隐患排除 · 低压', desc:'场景拖牌找隐患 · 11 处', f:'sims/safety-p2_lv_lv-safety-p2-universal.html'},
+    {ic:'⚠️', name:'作业现场隐患排除 · 高压', desc:'高压场景', f:'sims/safety-p2_hv_hv-safety-p2-universal.html'},
+    {ic:'🚸', name:'安全标志 quiz', desc:'四类标志辨识练习', f:'sims/safety-sign-quiz.html'},
+  ]},
+  {sec:'科目三 · 接线（K31-K33）', items:[
+    {ic:'🏗️', name:'K31-01 低压配电箱', desc:'1:1 实物接线板', f:'sims/schematic-lv3-k31-01.html'},
+    {ic:'💡', name:'K31-02 电表日光灯', desc:'单相电表+照明电路', f:'sims/schematic-lv3-k31-02.html'},
+    {ic:'🌀', name:'K31-03 三相连续运行', desc:'自锁控制', f:'sims/schematic-lv3-k31-03.html'},
+    {ic:'🔀', name:'K31-04 正反转', desc:'带熔断器', f:'sims/schematic-lv3-k31-04.html'},
+    {ic:'⚙️', name:'K31-05 星三角降压', desc:'三相异步启动', f:'sims/schematic-lv3-k31-05.html'},
+    {ic:'🔧', name:'K32 开关柜维护', desc:'低压配电柜运行维护', f:'sims/k32-maintenance.html'},
+    {ic:'🏗️', name:'K33 临时用电', desc:'施工现场', f:'sims/k33-01.html'},
+    {ic:'🖥️', name:'低压模拟屏', desc:'一次接线仿真', f:'sims/lv-sub3-oneline.html'},
+  ]},
+  {sec:'仪表单件训练', items:[
+    {ic:'🔎', name:'数字万用表', desc:'电压/电阻测量', f:'sims/digit-meter-lv.html'},
+    {ic:'🎚️', name:'钳形电流表', desc:'交流电流', f:'sims/clamp-meter-lv.html'},
+    {ic:'🕰️', name:'指针表①', desc:'MF47C 模拟表', f:'sims/analog-meter-lv-1.html'},
+    {ic:'🔋', name:'兆欧表', desc:'绝缘电阻', f:'sims/megger-lv.html'},
+    {ic:'🌍', name:'接地电阻测试仪', desc:'测接地电阻', f:'sims/ground-meter-lv.html'},
+    {ic:'🛡️', name:'漏保测试仪', desc:'动作电流/时间', f:'sims/lk-v02.html'},
+    {ic:'🔌', name:'插座验测', desc:'验电', f:'sims/outlet-tester-v8.html'},
+  ]},
+  {sec:'科目四 · 应急处置', items:[
+    {ic:'⚡', name:'低压触电处置', desc:'K41-02', f:'sims/shock_lv_k41-02-lv.html'},
+    {ic:'🫀', name:'心肺复苏 CPR', desc:'K42', f:'sims/cpr-canvas.html'},
+    {ic:'🩹', name:'包扎训练', desc:'K4401', f:'sims/bandage-canvas.html'},
+  ]},
+  {sec:'其他', items:[
+    {ic:'📋', name:'操作票', desc:'作业票填写', f:'sims/operation-paper-mobile.html'},
+  ]},
+];
+
+/* exam-mode: only modules that simulate real exam flow */
+var EXAM_SET = [
+  'sims/k11-exam-bench-lv.html',
+  'sims/k11-exam-bench.html',
+  'sims/safety-p2_lv_lv-safety-p2-universal.html',
+  'sims/safety-p2_hv_hv-safety-p2-universal.html',
+  'sims/schematic-lv3-k31-01.html','sims/schematic-lv3-k31-02.html',
+  'sims/schematic-lv3-k31-03.html','sims/schematic-lv3-k31-04.html',
+  'sims/schematic-lv3-k31-05.html','sims/k32-maintenance.html','sims/k33-01.html',
+  'sims/shock_lv_k41-02-lv.html','sims/cpr-canvas.html',
+];
+
+function isExamAllowed(f){ return EXAM_SET.indexOf(f) >= 0; }
+
+function startMode(mode){
+  CURRENT_MODE = mode;
+  document.getElementById('home').classList.add('hidden');
+  openPicker(mode);
+}
+function openPicker(mode){
+  var exam = mode === 'exam';
+  document.getElementById('pickerTitle').textContent = exam ? '模拟考试 · 选择考位' : '练习模式 · 选择模块';
+  document.getElementById('pickerMode').textContent = exam ? '考试模式' : '自由练习';
+  var list = document.getElementById('pickerList');
+  list.innerHTML = '';
+  MODULES.forEach(function(sec){
+    var items = sec.items.filter(function(it){
+      return !exam || isExamAllowed(it.f);
+    });
+    if(!items.length) return;
+    var s = document.createElement('div');
+    s.className = 'sec'; s.textContent = sec.sec;
+    list.appendChild(s);
+    if(exam && sec.sec.indexOf('仪表单件') >= 0){
+      var note = document.createElement('div');
+      note.className = 'sec-exp';
+      note.textContent = '考试模式下仪表单件不单独开放——仪表在 K11 考位流程内选择使用。练习模式可单独训练。';
+      list.appendChild(note);
+    }
+    items.forEach(function(it){
+      var d = document.createElement('div');
+      d.className = 'item';
+      d.innerHTML = '<div class="ic">'+it.ic+'</div><div class="tx"><h3>'+it.name+'</h3><p>'+it.desc+'</p></div><div class="go">›</div>';
+      d.onclick = function(){ go(it.f, it.name); };
+      list.appendChild(d);
+    });
   });
-  // 记录 iframe load
-  document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('picker').classList.add('show');
+}
+function backHome(){
+  document.getElementById('picker').classList.remove('show');
+  document.getElementById('home').classList.remove('hidden');
+  document.getElementById('curPage').textContent = '首页';
+}
+function home(){
+  document.getElementById('picker').classList.remove('show');
+  document.getElementById('home').classList.remove('hidden');
+  document.getElementById('f').src = 'about:blank';
+  document.getElementById('curPage').textContent = '首页';
+}
+
+/* ---------- iframe nav ---------- */
+function go(f, name){
+  document.getElementById('picker').classList.remove('show');
+  document.getElementById('home').classList.add('hidden');
+  document.getElementById('f').src = f;
+  document.getElementById('curPage').textContent = name || f;
+  // QuickLook 兜底：iframe 没加载过 → 整页跳转
+  var fEl = document.getElementById('f');
+  setTimeout(function(){
+    if (!fEl.dataset.loaded) { try { location.href = f; } catch(e){} }
+  }, 2500);
+}
+
+/* ---------- zoom ---------- */
+var scale = 1;
+function applyZoom(){ document.getElementById('frame').style.transform = 'scale('+scale+')';
+  document.getElementById('zv').textContent = Math.round(scale*100)+'%'; }
+function zoom(d){ scale = d===0 ? 1 : Math.min(2, Math.max(0.4, scale+d)); applyZoom(); }
+document.addEventListener('wheel', function(e){
+  if(e.ctrlKey){ e.preventDefault(); zoom(e.deltaY>0?-0.05:0.05); }
+}, {passive:false});
+
+/* ---------- iframe load tracking + QuickLook detect ---------- */
+document.addEventListener('DOMContentLoaded', function(){
+  var f = document.getElementById('f');
+  if(f) f.addEventListener('load', function(){ f.dataset.loaded = '1'; });
+});
+window.addEventListener('load', function(){
+  setTimeout(function(){
     var f = document.getElementById('f');
-    if (f) f.addEventListener('load', function(){ f.dataset.loaded = '1'; });
-  });
-})();
-</script></body>
+    // 只有当用户已经离开首页（iframe 被使用）才检测
+    var homeEl = document.getElementById('home');
+    if(homeEl.classList.contains('hidden') && f && !f.dataset.loaded){
+      document.getElementById('qlBanner').style.display = 'flex';
+    }
+  }, 4000);
+});
+</script>
+</body>
 </html>
