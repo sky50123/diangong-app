@@ -343,10 +343,8 @@ function renderPractice(){
         pracDone[q.code] = true;
         localStorage.setItem('dg_prac_done', JSON.stringify(pracDone));
         var f = q.f;
-        /* 练习模式：给 K11 抽题页加参数，让它显示题目选择面板 */
-        if (/k11-exam-bench(-lv)?\.html/.test(f)) {
-          f = f + '?mode=practice';
-        }
+        /* 练习模式：打开 K11 时显示题目选择弹窗 */
+        if (/k11-exam-bench(-lv)?\.html/.test(f)) f += '?mode=practice';
         go(f, q.name);
       };
       box.appendChild(d);
