@@ -1372,94 +1372,54 @@ img{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user
 
 
 
+
+
+
 <script>
-/* __PRACTICE_V2__ : 练习模式 URL 参数 → 自动切到指定题目 */
+/* __PRACTICE_PICKER__ : ?mode=practice 时直接打开原版换题弹窗，让用户自己选题 */
 (function(){
   'use strict';
-  var m = location.search.match(/[?&]q=(K11-0\d)/);
-  var target = m ? m[1] : null;
-  if (!target) return;   /* 没有 q 参数就不干预 */
-
-  var TITLES = {
-    'K11-01': '安全工器具与仪器仪表 01（穿戴/登杆/验电/插座）',
-    'K11-02': '安全工器具与仪器仪表 02（绝缘手套/接地线/万用表/钳形表）',
-    'K11-03': '安全工器具与仪器仪表 03（仪表读数/安全标志）',
-    'K11-04': '安全工器具与仪器仪表 04（综合仪表操作）'
-  };
-
-  function getCurCode(){
-    /* 从顶部 chip 或标题读当前题号 */
-    var els = Array.prototype.slice.call(document.querySelectorAll('span,div,h1,h2'));
-    for (var i = 0; i < els.length; i++) {
-      var mm = (els[i].textContent||'').match(/K11-0(\d)/);
-      if (mm && els[i].offsetParent !== null) return 'K11-0' + mm[1];
-    }
-    return null;
-  }
-
-  function clickSwitch(){
-    var btns = Array.prototype.slice.call(document.querySelectorAll('button'));
-    for (var i = 0; i < btns.length; i++) {
-      if (/^换题$/.test((btns[i].textContent||'').trim()) && btns[i].offsetParent !== null) {
-        btns[i].click();
-        return true;
-      }
-    }
-    return false;
-  }
-
-  function showTip(txt, color){
-    var t = document.createElement('div');
-    t.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:99999;' +
-      'background:' + (color||'#185FA5') + ';color:#fff;padding:10px 20px;border-radius:20px;' +
-      'font-size:13px;font-weight:600;box-shadow:0 4px 15px rgba(0,0,0,.3)';
-    t.textContent = txt;
-    document.body.appendChild(t);
-    setTimeout(function(){ t.remove(); }, 2500);
-  }
-
-  function trySwitch(attempt){
-    if (attempt > 8) { showTip('未能定位到 ' + target, '#c00'); return; }
-    var cur = getCurCode();
-    if (cur === target) {
-      showTip('✓ 已定位到 ' + target + ' ' + (TITLES[target]||''));
-      return;
-    }
-    if (clickSwitch()) {
-      setTimeout(function(){ trySwitch(attempt + 1); }, 600);
-    } else {
-      /* 可能还没进台面，等一等再试 */
-      setTimeout(function(){ trySwitch(attempt); }, 800);
-    }
-  }
+  if (!/[?&]mode=practice/.test(location.search)) return;
 
   window.addEventListener('load', function(){
-    /* 等页面稳定后自动开始抽题流程 */
     setTimeout(function(){
-      var btns = Array.prototype.slice.call(document.querySelectorAll('button'));
-      var start = btns.filter(function(b){ return /开始抽题/.test(b.textContent); })[0];
-      if (start) start.click();
-      /* 然后循环点"放入操作台"/"确认使用" */
-      var dialogSteps = 0;
-      var dlg = setInterval(function(){
-        dialogSteps++;
-        if (dialogSteps > 10) { clearInterval(dlg); startSwitch(); return; }
-        var btns = Array.prototype.slice.call(document.querySelectorAll('button')).filter(function(b){ return b.offsetParent !== null; });
-        var put = btns.find(function(b){ return /放入操作台/.test(b.textContent); });
-        var use = btns.find(function(b){ return /确认使用/.test(b.textContent); });
-        if (put) { put.click(); return; }
-        if (use) { use.click(); return; }
-        /* 没弹窗了 = 已进台面 */
-        clearInterval(dlg);
-        setTimeout(function(){ startSwitch(); }, 500);
-      }, 700);
-    }, 600);
-  });
+      try{
+        /* 1) 先渲染原版题目列表（K11-L01~L04） */
+        if (typeof qswRenderPicks === 'function') qswRenderPicks();
 
-  function startSwitch(){
-    showTip('练习模式 · 正在定位 ' + target + ' ...');
-    trySwitch(0);
-  }
+        /* 2) 显示换题弹窗 */
+        var mask = document.getElementById('qswMask');
+        if (mask) {
+          mask.classList.remove('hidden');
+          mask.style.display = 'flex';
+        }
+
+        /* 3) 改标题，表明是练习模式 */
+        var h3 = mask && mask.querySelector('h3');
+        if (h3) h3.textContent = '练习模式 · 选择要练的题目';
+
+        /* 4) 隐藏"随机抽新题"，练习模式只留顺序和指定题 */
+        var rand = document.getElementById('btnQswRand');
+        if (rand) rand.style.display = 'none';
+
+        /* 5) 底部说明改掉 */
+        var note = mask && mask.querySelector('div[style*="font-size:12px"]');
+        if (note) note.textContent = '点下面的题目直接开始练习；换题会重置当前操作台进度。';
+
+        /* 6) 弹窗关闭后如果还在说明页，自动点开始抽题进入 */
+        var close = document.getElementById('qswClose');
+        if (close) {
+          close.addEventListener('click', function(){
+            setTimeout(function(){
+              var scrIntro = document.querySelector('.screen:not(.hidden)');
+              var btn = document.getElementById('btnDraw');
+              if (btn && btn.offsetParent !== null) btn.click();
+            }, 300);
+          });
+        }
+      }catch(e){ console.warn('practice picker fail', e); }
+    }, 900);
+  });
 })();
 </script>
 
