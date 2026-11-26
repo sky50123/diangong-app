@@ -1291,16 +1291,6 @@ img{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user
 <!-- DCGEAR_END -->
 
 # -*- coding: utf-8 -*-
-"""
-Canvas 显示修复补丁。
-问题：k11 bench 的 canvas 在 #scrBench 由 hidden 变可见的瞬间，页面自身的绘制
-逻辑可能因 rect=0 而跳过，导致台面只画了极少内容（或完全空）。
-修复：
-1) MutationObserver 监听 #scrBench class 变化 → 可见后延迟触发 resize 事件
-2) 兜底：若 canvas.width 仍是默认 300，则按 CSS 尺寸重设并 dispatch resize
-3) 持续 3 次（100/400/1000ms）触发，确保布局稳定后重绘
-"""
-PATCH = r"""
 <script>
 /* __CANVAS_NUDGE__ */
 (function(){
@@ -1351,6 +1341,5 @@ PATCH = r"""
   });
 })();
 </script>
-"""
 </body>
 </html>
