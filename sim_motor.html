@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>接线模拟 · 三相电机自锁控制（K31-03）</title>
+<style>
+:root{--c1:#4f7df9;--ok:#22c55e;--err:#ef4444;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;}
+body{font-family:-apple-system,"PingFang SC",sans-serif;background:#eef1f6;color:#222;padding-bottom:20px;}
+.hd{background:linear-gradient(135deg,#f97316,#ef4444);color:#fff;padding:16px;display:flex;align-items:center;gap:10px;}
+.hd b{font-size:16px;}
+.hd .back{cursor:pointer;font-size:18px;}
+.info{margin:12px;padding:12px 14px;background:#fff;border-radius:12px;font-size:13px;line-height:1.7;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+.info b{color:#ea580c;}
+.stage{position:relative;margin:0 12px;background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;}
+svg{display:block;width:100%;touch-action:none;}
+.term{cursor:pointer;}
+.term circle.dot{fill:#fff;stroke:#334;stroke-width:2.5;transition:.15s;}
+.term.hot circle.dot{fill:#fbbf24;stroke:#b45309;}
+.wire{stroke:#64748b;stroke-width:3;fill:none;stroke-linecap:round;pointer-events:stroke;}
+.wire.ok{stroke:#22c55e;}
+.wire.wrong{stroke:#ef4444;stroke-dasharray:6 4;}
+.result{margin:12px;padding:14px;border-radius:12px;font-size:14px;line-height:1.8;display:none;}
+.result.good{background:#dcfce7;color:#166534;display:block;}
+.result.bad{background:#fee2e2;color:#991b1b;display:block;}
+.btns{display:flex;gap:10px;margin:0 12px;}
+.btns button{flex:1;padding:13px;border:none;border-radius:12px;font-size:15px;font-weight:600;}
+#btn-power{background:var(--ok);color:#fff;}
+#btn-clear{background:#e5e7eb;}
+#btn-help{background:#ffedd5;color:#c2410c;}
+.motor-spin{animation:spin 1s linear infinite;transform-origin:190px 470px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="hd"><span class="back" onclick="location='index.html'">←</span><b>接线模拟：三相电机连续运行（自锁）K31-03</b></div>
+<div class="info">
+<b>任务：</b>主电路 L1/L2/L3 → QF → FU1 → KM主触点 → FR热继电器 → 电机 U/V/W；控制电路 FU2 → FR常闭 → 停止按钮SB1(常闭) → 启动按钮SB2(常开)∥KM自锁触点 → KM线圈 → 回零。接完点【送电】，按 SB2 电机应连续运转，按 SB1 停止。
+</div>
+<div class="stage">
+<svg id="svg" viewBox="0 0 760 560">
+  <text x="20" y="45" fill="#b91c1c" font-weight="bold" font-size="14" style="cursor:pointer" data-src="L1">L1</text>
+  <text x="20" y="100" fill="#b91c1c" font-weight="bold" font-size="14" style="cursor:pointer" data-src="L2">L2</text>
+  <text x="20" y="155" fill="#b91c1c" font-weight="bold" font-size="14" style="cursor:pointer" data-src="L3">L3</text>
+  <text x="20" y="520" fill="#16a34a" font-weight="bold" font-size="14" style="cursor:pointer" data-src="PE">PE</text>
+  <!-- QF -->
+  <rect x="80" y="20" width="70" height="150" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="115" y="40" text-anchor="middle" font-size="12" fill="#334">QF</text>
+  <circle class="term" data-id="qf1_in" cx="80" cy="70" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="qf2_in" cx="80" cy="120" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="qf3_in" cx="80" cy="170" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="qf1_out" cx="150" cy="70" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="qf2_out" cx="150" cy="120" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="qf3_out" cx="150" cy="170" r="8"><circle class="dot" r="5"/></circle>
+  <!-- FU1 fuses -->
+  <g font-size="12" fill="#334">
+    <text x="210" y="80">FU1</text>
+  </g>
+  <circle class="term" data-id="fu1_in1" cx="215" cy="70" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fu1_in2" cx="215" cy="120" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fu1_in3" cx="215" cy="170" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fu1_out1" cx="245" cy="70" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fu1_out2" cx="245" cy="120" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fu1_out3" cx="245" cy="170" r="8"><circle class="dot" r="5"/></circle>
+  <!-- KM main contacts -->
+  <rect x="300" y="40" width="80" height="160" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="340" y="230" text-anchor="middle" font-size="13" fill="#334">KM 主触点</text>
+  <circle class="term" data-id="km1_in" cx="300" cy="70" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="km2_in" cx="300" cy="120" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="km3_in" cx="300" cy="170" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="km1_out" cx="380" cy="70" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="km2_out" cx="380" cy="120" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="km3_out" cx="380" cy="170" r="8"><circle class="dot" r="5"/></circle>
+  <!-- FR thermal -->
+  <rect x="100" y="300" width="120" height="60" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="160" y="336" text-anchor="middle" font-size="13" fill="#334">FR 热继电器</text>
+  <circle class="term" data-id="fr1_in" cx="100" cy="320" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fr2_in" cx="160" cy="320" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fr3_in" cx="220" cy="320" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fr1_out" cx="100" cy="350" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fr2_out" cx="160" cy="350" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="fr3_out" cx="220" cy="350" r="8"><circle class="dot" r="5"/></circle>
+  <!-- Motor -->
+  <circle cx="190" cy="470" r="52" fill="#fef3c7" stroke="#a16207" stroke-width="2"/>
+  <text x="190" y="466" text-anchor="middle" font-size="16" fill="#854d0e">M</text>
+  <text x="190" y="486" text-anchor="middle" font-size="13" fill="#854d0e">3~</text>
+  <g font-size="12" fill="#854d0e">
+    <text x="120" y="430">U</text><text x="185" y="415">V</text><text x="250" y="430">W</text>
+  </g>
+  <circle class="term" data-id="m_u" cx="130" cy="440" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="m_v" cx="190" cy="420" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="m_w" cx="250" cy="440" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="m_pe" cx="190" cy="522" r="8"><circle class="dot" r="5"/></circle>
+  <!-- Control circuit: right side -->
+  <text x="470" y="35" font-size="14" fill="#334">控制电路（FU2 下来）</text>
+  <circle class="term" data-id="ctl_L" cx="450" cy="60" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="ctl_N" cx="450" cy="500" r="8"><circle class="dot" r="5"/></text></circle>
+  <!-- FR NC -->
+  <rect x="520" y="40" width="110" height="46" rx="6" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="575" y="68" text-anchor="middle" font-size="12" fill="#334">FR 常闭(95-96)</text>
+  <circle class="term" data-id="frnc_in" cx="520" cy="63" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="frnc_out" cx="630" cy="63" r="8"><circle class="dot" r="5"/></circle>
+  <!-- SB1 stop NC -->
+  <rect x="520" y="130" width="110" height="46" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+  <text x="575" y="158" text-anchor="middle" font-size="12" fill="#991b1b">SB1 停止(常闭)</text>
+  <circle class="term" data-id="sb1_in" cx="520" cy="153" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="sb1_out" cx="630" cy="153" r="8"><circle class="dot" r="5"/></circle>
+  <!-- SB2 start NO -->
+  <rect x="480" y="230" width="110" height="46" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+  <text x="535" y="258" text-anchor="middle" font-size="12" fill="#166534">SB2 启动(常开)</text>
+  <circle class="term" data-id="sb2_in" cx="480" cy="253" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="sb2_out" cx="590" cy="253" r="8"><circle class="dot" r="5"/></circle>
+  <!-- KM self-lock NO -->
+  <rect x="620" y="230" width="110" height="46" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="675" y="258" text-anchor="middle" font-size="12" fill="#1e40af">KM 自锁(常开)</text>
+  <circle class="term" data-id="kmzk_in" cx="620" cy="253" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="kmzk_out" cx="730" cy="253" r="8"><circle class="dot" r="5"/></circle>
+  <!-- KM coil -->
+  <rect x="520" y="380" width="110" height="50" rx="6" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="575" y="410" text-anchor="middle" font-size="13" fill="#334">KM 线圈</text>
+  <circle class="term" data-id="coil_in" cx="575" cy="380" r="8"><circle class="dot" r="5"/></circle>
+  <circle class="term" data-id="coil_out" cx="575" cy="430" r="8"><circle class="dot" r="5"/></circle>
+  <g id="wires"></g>
+</svg>
+</div>
+<div class="result" id="result"></div>
+<div class="btns">
+  <button id="btn-clear" onclick="clearWires()">拆线重来</button>
+  <button id="btn-help" onclick="showAnswer()">看提示</button>
+  <button id="btn-power" onclick="powerOn()">⚡ 送电</button>
+</div>
+<script>
+// Main circuit targets
+const T_MAIN=[
+ ["L1","qf1_in"],["L2","qf2_in"],["L3","qf3_in"],
+ ["qf1_out","fu1_in1"],["qf2_out","fu1_in2"],["qf3_out","fu1_in3"],
+ ["fu1_out1","km1_in"],["fu1_out2","km2_in"],["fu1_out3","km3_in"],
+ ["km1_out","fr1_in"],["km2_out","fr2_in"],["km3_out","fr3_in"],
+ ["fr1_out","m_u"],["fr2_out","m_v"],["fr3_out","m_w"],
+ ["m_pe","PE"]
+];
+// Control circuit: ctl_L from KM L2-side tap is simplified: power from fu1_out2 (L2 after fuse)
+const T_CTL=[
+ ["fu1_out2","ctl_L"],
+ ["ctl_N","coil_out"],
+ ["ctl_L","frnc_in"],
+ ["frnc_out","sb1_in"],
+ ["sb1_out","sb2_in"],
+ ["sb2_out","coil_in"],
+ ["sb1_out","kmzk_in"],
+ ["kmzk_out","sb2_out"]
+];
+const SRC={L1:[40,45],L2:[40,100],L3:[40,155],PE:[40,520]};
+const POS={};
+document.querySelectorAll('.term').forEach(t=>{
+  POS[t.dataset.id]=[+t.getAttribute('cx'),+t.getAttribute('cy')];
+  t.addEventListener('click',()=>pickTerm(t.dataset.id));
+});
+document.querySelectorAll('text[data-src]').forEach(tx=>{
+  tx.addEventListener('click',()=>pickTerm(tx.dataset.src));
+});
+let sel=null,wires=[];
+function pickTerm(id){
+  if(!sel){sel=id;mark();return;}
+  if(sel===id){sel=null;mark();return;}
+  addWire(sel,id);sel=null;mark();
+}
+function mark(){
+  document.querySelectorAll('.term').forEach(t=>{
+    t.classList.toggle('hot',t.dataset.id===sel||SRC[t.dataset.id]&&sel===t.dataset.id);
+  });
+  document.querySelectorAll('text[data-src]').forEach(tx=>{
+    tx.setAttribute('fill',tx.dataset.src===sel?'#f59e0b':(tx.dataset.src==='PE'?'#16a34a':'#b91c1c'));
+  });
+}
+function addWire(a,b){
+  if(wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))return;
+  const pa=POS[a]||SRC[a],pb=POS[b]||SRC[b];
+  const el=document.createElementNS('http://www.w3.org/2000/svg','path');
+  const mx=(pa[0]+pb[0])/2;
+  el.setAttribute('d',`M${pa[0]},${pa[1]} C${mx},${pa[1]} ${mx},${pb[1]} ${pb[0]},${pb[1]}`);
+  el.setAttribute('class','wire');
+  el.addEventListener('click',e=>{
+    if(e.target===el){wires=wires.filter(w=>w.el!==el);el.remove();e.stopPropagation();}
+  });
+  document.getElementById('wires').appendChild(el);
+  wires.push({a:a,b:b,el});
+}
+function has(a,b){return wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a));}
+function clearWires(){wires.forEach(w=>w.el.remove());wires=[];document.getElementById('result').className='result';}
+function showAnswer(){
+  const r=document.getElementById('result');r.style.display='block';r.className='result';r.style.background='#fff';r.style.color='#1e293b';
+  r.innerHTML='<b style="color:#c2410c">主电路：</b>L1/L2/L3 → QF 三相 → FU1 三相 → KM 主触点三相 → FR 三相 → 电机 U/V/W，电机外壳→PE。<br><b style="color:#c2410c">控制电路：</b>从 FU2 之后取电（本图从 L2 熔断器后取）→ FR常闭(95) → FR常闭(96)出 → SB1常闭 → SB2常开 → KM线圈 → 回 N。<b>KM辅助常开触点与 SB2 并联</b>（自锁）。';
+}
+function powerOn(){
+  const r=document.getElementById('result');
+  const all=[...T_MAIN,...T_CTL];
+  let bad=all.filter(([a,b])=>!has(a,b));
+  const extras=wires.filter(w=>!all.some(([a,b])=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)));
+  wires.forEach(w=>w.el.classList.remove('ok','wrong'));
+  all.forEach(([a,b])=>{if(has(a,b)){const w=wires.find(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a));w.el.classList.add('ok');}});
+  extras.forEach(w=>w.el.classList.add('wrong'));
+  const okMain=T_MAIN.every(([a,b])=>has(a,b));
+  const okCtl=T_CTL.every(([a,b])=>has(a,b));
+  const score=Math.max(0,100-bad.length*5-extras.length*4);
+  r.style.display='block';
+  if(bad.length===0&&extras.length===0){
+    r.className='result good';
+    r.innerHTML='✅ 主电路、控制电路全部正确！<br>模拟：按 SB2 → KM 吸合自锁，电机连续运转 🌀<br>按 SB1 → 停止。<br>评分：100 分。再检查一遍：通电试车前先测绝缘、验电！';
+    document.querySelector('#svg circle[cx="190"][cy="470"]').classList.add('motor-spin');
+  }else{
+    r.className='result bad';
+    let m=`❌ ${okMain?'主电路 ✅':'主电路 ❌'} / ${okCtl?'控制 ✅':'控制 ❌'}<br>缺线 ${bad.length} 处：${bad.map(([a,b])=>a+'↔'+b).join('、')||'无'}<br>多余线 ${extras.length} 处（红虚线）<br>得分 ${score}（80 合格）`;
+    // safety check: missing PE
+    if(!has("m_pe","PE"))m+='<br>⚠️ <b>安全不合格项：电机外壳未接 PE 保护接地 → 终止考试计 0 分！</b>';
+    if(!has("fu1_out2","ctl_L")&&wires.some(w=>(w.a==="ctl_L"||w.b==="ctl_L")&&!["frnc_in"].includes(w.a)&&!["frnc_in"].includes(w.b)))
+      m+='<br>⚠️ 控制电源取点错误：应从熔断器之后取电';
+    r.innerHTML=m;
+    document.querySelector('#svg circle[cx="190"][cy="470"]').classList.remove('motor-spin');
+  }
+}
+</script>
+</body>
+</html>

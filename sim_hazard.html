@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>隐患辨识 · 安全用电场景（K21-01）</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,"PingFang SC",sans-serif;background:#eef1f6;color:#222;padding-bottom:20px;}
+.hd{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:16px;display:flex;align-items:center;gap:10px;}
+.hd b{font-size:16px;}
+.hd .back{cursor:pointer;font-size:18px;}
+.info{margin:12px;padding:12px 14px;background:#fff;border-radius:12px;font-size:13px;line-height:1.7;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+.scene{position:relative;margin:0 12px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.scene img{width:100%;display:block;}
+.spot{position:absolute;width:34px;height:34px;border-radius:50%;border:3px solid #f59e0b;background:rgba(245,158,11,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:bold;color:#b45309;}
+.spot.picked{border-color:#3b82f6;background:rgba(59,130,246,.3);color:#1e40af;}
+.spot.hit{border-color:#22c55e;background:rgba(34,197,94,.35);}
+.spot.miss{border-color:#ef4444;background:rgba(239,68,68,.35);}
+.hints{margin:12px;padding:14px;background:#fff;border-radius:12px;font-size:13px;line-height:1.9;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.hints li{margin-left:18px;}
+.score{margin:12px;padding:14px;border-radius:12px;font-size:14px;display:none;}
+.score.good{background:#dcfce7;color:#166534;display:block;}
+.score.bad{background:#fee2e2;color:#991b1b;display:block;}
+.btns{display:flex;gap:10px;margin:0 12px;}
+.btns button{flex:1;padding:13px;border:none;border-radius:12px;font-size:15px;font-weight:600;}
+#btn-check{background:#f59e0b;color:#fff;}
+#btn-reset{background:#e5e7eb;}
+.detail{margin:10px 12px;font-size:13px;line-height:1.9;background:#fff;border-radius:12px;padding:14px;display:none;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.detail dt{font-weight:700;color:#b45309;}
+.detail dd{margin:4px 0 12px;color:#444;}
+.detail ol{margin-left:18px;}
+</style>
+</head>
+<body>
+<div class="hd"><span class="back" onclick="location='index.html'">←</span><b>隐患辨识：电工登杆作业场景（K21-01）</b></div>
+<div class="info">
+<b>任务：</b>下面是电工登杆作业示意图。图上已经标出 <b style="color:#f59e0b">6 个候选点位</b>，点选你认为<b>存在安全隐患</b>的点位（最多选 4 个），然后点【判定】。<br>模拟考试规则：漏判/误判一处扣 20 分，扣满 20 分终止考试。
+</div>
+<div class="scene">
+<img src="img/A_p50_0.png" alt="登杆作业场景">
+<!-- candidate spots: mix of real hazards and decoys -->
+<div class="spot" data-hz="1" style="left:12%;top:30%;">①</div>
+<div class="spot" data-hz="1" style="left:40%;top:20%;">②</div>
+<div class="spot" data-hz="0" style="left:70%;top:35%;">③</div>
+<div class="spot" data-hz="1" style="left:25%;top:60%;">④</div>
+<div class="spot" data-hz="0" style="left:55%;top:70%;">⑤</div>
+<div class="spot" data-hz="1" style="left:82%;top:62%;">⑥</div>
+</div>
+<div class="hints">
+<b>候选点提示（考试以图为准）：</b>
+<ol>
+<li>① 脚扣/登高工具状态</li>
+<li>② 安全带挂设方式</li>
+<li>③ 杆体外观</li>
+<li>④ 下方人员站位</li>
+<li>⑤ 天气/环境</li>
+<li>⑥ 头部防护</li>
+</ol>
+</div>
+<div class="score" id="score"></div>
+<div class="detail" id="detail"></div>
+<div class="btns">
+  <button id="btn-reset" onclick="reset()">重选</button>
+  <button id="btn-check" onclick="check()">判定</button>
+</div>
+<script>
+const ANSWERS=["①","②","④","⑥"];
+const DETAIL={
+ "①":"<dt>① 登杆工具</dt><dd>脚扣未做人体冲击试验/有裂纹 —— 每次登杆前必须对脚扣、围杆带、安全绳做冲击或牵拉试验。<b>扣分点</b></dd>",
+ "②":"<dt>② 安全带挂设</dt><dd>安全带未采用“高挂低用”，或挂点不在牢固构件/专用钢丝绳上 —— 挂设位置低于腰部属严重违章。<b>扣分点</b></dd>",
+ "③":"<dt>③ 杆体</dt><dd>杆根、基础、拉线牢固属于登杆前检查项，图中杆体本身正常。<b>非隐患</b></dd>",
+ "④":"<dt>④ 杆下站位</dt><dd>杆下方正对作业点站人，无工具袋防坠措施 —— 落物伤人风险，应设置围栏并离开正下方。<b>扣分点</b></dd>",
+ "⑤":"<dt>⑤ 环境</dt><dd>天气良好、场地开阔，无雷雨大风。<b>非隐患</b></dd>",
+ "⑥":"<dt>⑥ 头部防护</dt><dd>未戴安全帽或帽带未系紧 —— 登杆作业安全帽必须系紧帽带。<b>扣分点</b></dd>"
+};
+let picked=new Set();
+document.querySelectorAll('.spot').forEach(s=>{
+  s.addEventListener('click',()=>{
+    const t=s.textContent;
+    if(picked.has(t)){picked.delete(t);s.classList.remove('picked');}
+    else{if(picked.size>=4){alert('最多选 4 个');return;}picked.add(t);s.classList.add('picked');}
+  });
+});
+function check(){
+  const sc=document.getElementById('score'),dt=document.getElementById('detail');
+  const hits=[...picked].filter(x=>ANSWERS.includes(x));
+  const missed=ANSWERS.filter(x=>!picked.has(x));
+  const falsePos=[...picked].filter(x=>!ANSWERS.includes(x));
+  const errors=missed.length+falsePos.length;
+  const score=Math.max(0,100-errors*20);
+  document.querySelectorAll('.spot').forEach(s=>{
+    const t=s.textContent;
+    s.classList.remove('picked');
+    if(ANSWERS.includes(t))s.classList.add('hit');
+    else if(picked.has(t))s.classList.add('miss');
+  });
+  let html=`判定结果：<b>${score} 分</b>（80 分合格）<br>· 正确找出隐患：${hits.length?hits.join('、'):'无'}<br>· 漏判：${missed.length?missed.join('、'):'无'}<br>· 误判：${falsePos.length?falsePos.join('、'):'无'}`;
+  if(missed.length>=1){html+='<br>⚠️ 漏判主要隐患属"安全不合格项"风险，实操考试中直接终止计 0 分！';}
+  sc.className='resultx score '+(score>=80?'good':'bad');sc.className='score '+(score>=80?'good':'bad');
+  sc.innerHTML=html;
+  dt.style.display='block';
+  dt.innerHTML='<b>逐项解析：</b><br>'+Object.keys(DETAIL).map(k=>DETAIL[k]).join('');
+  sc.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function reset(){
+  picked.clear();
+  document.querySelectorAll('.spot').forEach(s=>s.className='spot');
+  document.getElementById('score').className='score';
+  document.getElementById('detail').style.display='none';
+}
+</script>
+</body>
+</html>

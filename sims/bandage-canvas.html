@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>K44-01 创伤包扎 · 右前臂螺旋反折法</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+         background:#eef1f4; color:#1c222c; display:flex; flex-direction:column; overflow:hidden; }
+  /* ---- 顶栏 ---- */
+  #topbar { flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:9px 12px;
+            background:#2f3742; color:#fff; }
+  #topbar .tt { font-size:14px; font-weight:600; margin-right:auto; }
+  #stepIdx { font-size:12px; background:#465061; border-radius:10px; padding:3px 9px; }
+  #curScore { font-size:13px; font-weight:700; color:#ffd76e; }
+  /* ---- 舞台 ---- */
+  #stage { flex:1 1 auto; position:relative; overflow:hidden; background:#f6f7f9; }
+  #scene { position:absolute; inset:0 0 118px 0; overflow:hidden; }
+  .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+  .layer { position:absolute; transition:opacity .5s, transform .5s; }
+  .layer.show { opacity:1 !important; }
+  .badge { position:absolute; background:#e8f7ee; color:#177a48; border:1px solid #9fd8b7;
+           border-radius:8px; font-size:11px; padding:3px 8px; opacity:0; }
+  .badge.show { opacity:1; }
+  /* S1 现场环境：蹲姿图内三个可点检查点 */
+  #squatFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+  #squatFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* S1 地面：蹲姿图是抠图白底，"地面稳固/撤离通道"原来悬在白底上；补一层柔和地面+鞋底投影 */
+  #squatFloor { position:absolute; left:-14%; right:-14%; top:71%; bottom:-36%; z-index:0;
+                background:linear-gradient(180deg, rgba(212,220,230,0) 0%, rgba(206,215,226,.46) 16%,
+                           rgba(198,208,220,.66) 46%, rgba(190,202,215,.80) 100%);
+                -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,#000 16%,#000 84%,rgba(0,0,0,0) 100%);
+                mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,#000 16%,#000 84%,rgba(0,0,0,0) 100%); }
+  .bootSh { position:absolute; border-radius:50%; z-index:0;
+            background:radial-gradient(ellipse at center, rgba(36,46,58,.36) 0%,
+                       rgba(36,46,58,.17) 46%, rgba(36,46,58,0) 74%); }
+  /* 撤离通道：地面上的绿色指引箭头（透视）+ 国标"安全出口"牌（科目一标识牌素材） */
+  #escArrow { position:absolute; z-index:2; left:17.5%; top:90.4%; width:22.5%; height:7.4%;
+              transform:rotate(-5deg) skewY(3deg); transform-origin:100% 50%;
+              background:linear-gradient(90deg,#3aa573 0%,#2f9a68 55%,#248457 100%);
+              opacity:.88; filter:drop-shadow(0 2px 3px rgba(12,60,36,.20));
+              clip-path:polygon(100% 20%, 40% 20%, 40% 0, 0 50%, 40% 100%, 40% 80%, 100% 80%); }
+  #escSign { position:absolute; z-index:2; left:1.5%; top:79.4%; width:15.5%;
+             transform:rotateX(13deg) rotate(-2deg); transform-origin:50% 100%;
+             filter:drop-shadow(0 4px 7px rgba(20,44,32,.32)) drop-shadow(0 0 1px rgba(255,255,255,.7)); }
+  #escSignSh { position:absolute; z-index:1; left:0.5%; top:93.6%; width:17.4%; height:3.4%;
+               border-radius:50%; background:radial-gradient(ellipse at center, rgba(22,58,40,.30) 0%,
+                          rgba(22,58,40,.14) 50%, rgba(22,58,40,0) 76%); }
+  .envpt.lbtop { flex-direction:column-reverse; }
+  .envpt { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column;
+           align-items:center; gap:3px; cursor:pointer; z-index:4; }
+  .envpt .d { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.96);
+              border:2px solid #f0a63a; color:#b9760c; font-size:14px; font-weight:800;
+              display:flex; align-items:center; justify-content:center;
+              box-shadow:0 2px 9px rgba(0,0,0,.28); animation:ptPulse 1.6s ease-in-out infinite; }
+  .envpt .lb { background:rgba(255,255,255,.94); border:1px solid #d8dde4; border-radius:6px;
+               padding:2px 6px; font-size:10px; color:#33404f; white-space:nowrap; }
+  .envpt.ok .d { background:#1d9e75; border-color:#1d9e75; color:#fff; animation:none; }
+  .envpt.ok .d::before { content:"✓"; }
+  .envpt.ok .d span { display:none; }
+  .envpt.ok .lb { color:#177a48; border-color:#9fd8b7; background:#e8f7ee; }
+  @keyframes ptPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(240,166,58,.55); } 60%{ box-shadow:0 0 0 10px rgba(240,166,58,0); } }
+  /* S1 手部热区：点环境三点后直接在图上手上点，完成"安慰·征得配合" */
+  .handpt { position:absolute; width:58px; height:58px; border-radius:50%;
+            transform:translate(-50%,-50%); z-index:5; cursor:pointer;
+            border:2px dashed rgba(240,166,58,.75); background:rgba(240,166,58,.10);
+            display:flex; align-items:center; justify-content:center;
+            transition:.3s; }
+  .handpt .handpt-lb { position:absolute; left:calc(100% + 5px); top:50%; transform:translateY(-50%);
+                       background:rgba(255,255,255,.94); border:1px solid #f0c98a; border-radius:6px;
+                       padding:2px 7px; font-size:10px; color:#b9760c; white-space:nowrap; }
+  .handpt.ready { border-color:#f0a63a; background:rgba(240,166,58,.16);
+                  animation:ptPulse 1.6s ease-in-out infinite; }
+  .handpt.ready .handpt-lb { color:#8a5a0c; border-color:#f0a63a; font-weight:700; }
+  .handpt.done { border-color:#1d9e75; background:rgba(29,158,117,.14); animation:none; cursor:default; }
+  .handpt.done .handpt-lb { color:#177a48; border-color:#9fd8b7; background:#e8f7ee; }
+  .handpt.done .handpt-lb::before { content:"✓ "; }
+  /* ---- 图内动作交互点：把"点底部文字按钮"改成直接在图上点 ---- */
+  .actpt { position:absolute; transform:translate(-50%,-50%); width:34px; height:34px; border-radius:50%;
+           background:rgba(255,255,255,.96); border:2px solid #f0a63a; color:#b9760c;
+           box-shadow:0 2px 10px rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center;
+           cursor:pointer; z-index:8; animation:ptPulse 1.6s ease-in-out infinite;
+           transition:width .25s,height .25s,background .25s,border-color .25s,opacity .25s; }
+  .actpt .n { font-size:13px; font-weight:800; line-height:1; }
+  .actpt .lb { position:absolute; top:calc(100% + 3px); left:50%; transform:translateX(-50%);
+               background:rgba(255,255,255,.95); border:1px solid #f0c98a; border-radius:6px;
+               padding:1px 6px; font-size:10px; color:#8a5a0c; white-space:nowrap; font-weight:700;
+               box-shadow:0 1px 4px rgba(0,0,0,.12); }
+  .actpt.lbtop .lb { top:auto; bottom:calc(100% + 3px); }
+  .actpt.lbleft .lb { left:-6px; transform:none; }
+  .actpt.done { background:#1d9e75; border-color:#1d9e75; animation:none; cursor:default;
+                width:26px; height:26px; opacity:.9; pointer-events:none; }
+  .actpt.done .n { color:#fff; font-size:12px; }
+  .actpt.done .lb { color:#177a48; border-color:#9fd8b7; background:#e8f7ee; }
+  .actpt.dim { opacity:.55; }
+  /* 托盘前沿的确认牌（图内确认，不占底部按钮栏） */
+  #trayConfirm { position:absolute; left:50%; top:78%; transform:translate(-50%,-50%);
+                 background:#fff; border:2px solid #1d9e75; color:#177a48; border-radius:999px;
+                 padding:6px 15px; font-size:12px; font-weight:700; white-space:nowrap; cursor:pointer;
+                 z-index:9; box-shadow:0 4px 13px rgba(20,40,30,.28); animation:ptPulse 1.9s ease-in-out infinite; }
+  #trayConfirm b { color:#d1830c; font-weight:800; }
+  #trayConfirm.ready { background:#1d9e75; border-color:#1d9e75; color:#fff; }
+  #trayConfirm.ready b { color:#ffd76e; }
+  #trayConfirm:active { transform:translate(-50%,-50%) scale(.95); }
+  /* ---- 底部动作按钮栏：当全部动作都在图内完成时收起，画面随之变高 ---- */
+  #stage.noacts #acts { display:none; }
+  #stage.noacts #scene { bottom:70px; }
+  #envProgress { position:absolute; left:10px; top:40px; font-size:11px; color:#33404f;
+                 background:rgba(255,255,255,.92); border:1px solid #d8dde4; border-radius:8px; padding:3px 9px; }
+  #envProgress b { color:#d1830c; }
+  #envProgress.done b { color:#177a48; }
+  .mark { position:absolute; width:26px; height:26px; border-radius:50%;
+          background:rgba(229,57,53,.85); border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.35);
+          transform:translate(-50%,-50%) scale(0); transition:transform .4s; }
+  .mark.show { transform:translate(-50%,-50%) scale(1); }
+  .mark.aid { background:rgba(30,136,229,.85); }
+  .cap { position:absolute; font-size:11px; color:#33404f; background:rgba(255,255,255,.92);
+         border:1px solid #c9ced6; border-radius:6px; padding:2px 7px; white-space:nowrap;
+         transform:translate(-50%,0); opacity:0; transition:opacity .4s; }
+  .cap.show { opacity:1; }
+  #tagCard { position:absolute; left:38%; top:12%; width:56%; min-width:104px; max-width:150px;
+             background:#fff8e0; border:1px solid #d9b64a;
+             border-radius:8px; padding:5px 7px; font-size:10.5px; color:#6b5312; line-height:1.45;
+             box-shadow:0 3px 10px rgba(0,0,0,.15); opacity:0; transform:rotate(6deg) scale(.7); transition:.5s; }
+  #tagCard.show { opacity:1; transform:rotate(6deg) scale(1); }
+  #heartLine { position:absolute; left:0; right:0; height:0; border-top:2px dashed #e5537a; opacity:0; transition:.5s; }
+  #heartLine.show { opacity:.9; }
+  #heartLine .hl-label { position:absolute; right:6px; top:-16px; font-size:11px; color:#c2335a; font-weight:600; }
+  #raiseClock { position:absolute; right:10px; top:56px; background:rgba(28,34,44,.9); color:#fff;
+                border-radius:8px; padding:6px 10px; font-size:12px; opacity:0; transition:.5s; }
+  #raiseClock.show { opacity:1; }
+  #raiseClock b { color:#ffd76e; }
+  /* S3/S4/S10 肢体特写：手臂从左边缘伸入，根部落到画面外，避免断臂悬空 */
+  .limbStage { position:absolute; inset:0; overflow:hidden; }
+  .limbPhoto { position:absolute; height:64%; width:auto; top:18%; left:-6%;
+               transform-origin:left center; filter:drop-shadow(0 4px 10px rgba(0,0,0,.10)); }
+  /* S4 上臂止血：整条手臂左移，让近端(肱动脉)进画面，手被推出左侧 */
+  .limbPhoto.upper { left:-52%; }
+  /* S4 手臂等大定位容器：手套/按压点按手臂原图 1152×768 坐标定位，永远贴胳膊 */
+  #limbFrame { position:absolute; }
+  #limbFrame .limbPhoto { position:absolute; inset:0; width:100%; height:100%; top:auto; left:auto; }
+  .glovePress { position:absolute; width:15%; height:auto; opacity:0; transition:opacity .4s, transform .4s;
+                transform:translate(-50%,-50%) rotate(8deg); pointer-events:none; filter:drop-shadow(0 3px 6px rgba(0,0,0,.2)); }
+  .glovePress.show { opacity:1; }
+  .pressSpot { position:absolute; width:18px; height:18px; border-radius:50%; border:3px solid #fff;
+               background:rgba(229,57,53,.9); box-shadow:0 2px 8px rgba(0,0,0,.35);
+               transform:translate(-50%,-50%) scale(0); transition:transform .4s; }
+  .pressSpot.show { transform:translate(-50%,-50%) scale(1); }
+  .pressSpot.aid { background:rgba(30,136,229,.9); }
+  .hLine { position:absolute; left:0; right:0; height:0; border-top:2px dashed #e5537a; opacity:0; transition:.5s; }
+  .hLine.show { opacity:.9; }
+  .hLine .hl-tag { position:absolute; left:8px; top:-17px; font-size:11px; color:#c2335a; font-weight:600;
+                   background:rgba(255,255,255,.85); border-radius:5px; padding:1px 5px; }
+  .hArrow { position:absolute; width:2px; background:#e5537a; opacity:0; transition:.5s; }
+  .hArrow::after { content:""; position:absolute; top:-1px; left:-4px; border-left:5px solid transparent;
+                   border-right:5px solid transparent; border-bottom:8px solid #e5537a; }
+  .hArrow.show { opacity:.9; }
+  .liftTag { position:absolute; font-size:11px; color:#c2335a; font-weight:600; opacity:0; transition:.5s;
+             background:rgba(255,255,255,.9); border:1px solid #f0b8c8; border-radius:6px; padding:2px 7px; }
+  .liftTag.show { opacity:1; }
+  /* 物品选择 —— 医生不锈钢托盘 */
+  #supplyWrap { position:absolute; inset:0; display:none; flex-direction:column; }
+  #supplyWrap.show { display:flex; }
+  #supplyImg { flex:1 1 auto; position:relative; margin:6px 8px; overflow:hidden;
+               background:radial-gradient(ellipse at 50% 30%,#f4f6f8 0%,#e5e9ee 70%,#d9dee5 100%);
+               border-radius:10px; border:1px solid #d8dde4;
+               display:flex; align-items:center; justify-content:center; }
+  /* 不锈钢托盘本体：拉丝金属渐变 + 立体卷边 + 内腔阴影 */
+  #tray { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+          width:92%; height:80%;
+          border-radius:18px;
+          background:
+            linear-gradient(135deg,rgba(255,255,255,.85) 0%,rgba(255,255,255,0) 22%,rgba(0,0,0,.05) 55%,rgba(255,255,255,.5) 78%,rgba(0,0,0,.04) 100%),
+            repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0px,rgba(255,255,255,.10) 1px,rgba(120,132,145,.06) 2px,rgba(120,132,145,.06) 3px),
+            linear-gradient(160deg,#fefefe 0%,#d7dde3 14%,#eef2f5 30%,#c3cad2 50%,#e8edf1 70%,#b9c1ca 88%,#e3e8ed 100%);
+          box-shadow:
+            0 10px 22px rgba(40,52,66,.28),
+            inset 0 2px 2px rgba(255,255,255,.95),
+            inset 0 -3px 5px rgba(70,82,96,.28),
+            inset 3px 0 5px rgba(255,255,255,.5),
+            inset -3px 0 5px rgba(70,82,96,.18);
+          border:2px solid #aeb7c1; }
+  /* 托盘内腔（凹下去的盛放区） */
+  #trayWell { position:absolute; inset:5% 4%; border-radius:11px;
+              background:linear-gradient(155deg,#eef1f4 0%,#dfe4e9 40%,#e9edf1 62%,#d4dae1 100%);
+              box-shadow:inset 0 3px 7px rgba(60,72,86,.22), inset 0 -1px 1px rgba(255,255,255,.8);
+              border:1px solid rgba(150,162,175,.45); }
+  /* 每件器材：在托盘内按百分比定位 */
+  .tool { position:absolute; transform:translate(-50%,-50%); transition:transform .28s cubic-bezier(.2,.8,.3,1), filter .28s;
+          cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .tool img { display:block; width:100%; height:auto; filter:drop-shadow(0 3px 3px rgba(30,40,52,.28)); }
+  .tool.picked { transform:translate(-50%,-50%) scale(1.18) translateY(-10px); z-index:6;
+                 filter:drop-shadow(0 10px 10px rgba(30,40,52,.4)); }
+  .tool.note::after { content:attr(data-note); position:absolute; left:50%; top:-20px; transform:translateX(-50%);
+                      white-space:nowrap; font-size:10px; color:#177a48; background:rgba(232,247,238,.95);
+                      border:1px solid #9fd8b7; border-radius:6px; padding:1px 6px; opacity:0; transition:.25s; }
+  .tool.picked.note::after { opacity:1; }
+  .tool .tick { position:absolute; right:-6px; top:-6px; width:19px; height:19px; border-radius:50%;
+                background:#1d9e75; color:#fff; font-size:12px; line-height:19px; text-align:center;
+                box-shadow:0 1px 4px rgba(0,0,0,.25); opacity:0; transform:scale(.5); transition:.2s; }
+  .tool.picked .tick { opacity:1; transform:scale(1); }
+  .tool.wrong .tick { background:#d43a30; }
+  /* 白手：从画面右上伸进来"拿起"器材，动作结束回位 */
+  #pickHand { position:absolute; left:0; top:0; width:24%; z-index:9; pointer-events:none;
+              transform-origin:74% 18%;
+              opacity:0; transform:translate(40px,-60px) rotate(20deg);
+              filter:drop-shadow(0 6px 8px rgba(30,40,52,.35)); }
+  #pickHand.reach { animation:handReach .85s cubic-bezier(.3,.7,.3,1) forwards; }
+  @keyframes handReach {
+    0%   { opacity:0; transform:translate(40px,-60px) rotate(20deg); }
+    35%  { opacity:1; transform:translate(0,0) rotate(0deg); }
+    62%  { opacity:1; transform:translate(0,0) rotate(0deg); }
+    100% { opacity:0; transform:translate(30px,-46px) rotate(14deg); }
+  }
+  /* 手臂图等大定位容器：交互点按 1152×768 原图坐标定位 */
+  #armFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+              transition:transform .65s cubic-bezier(.3,.7,.3,1); }
+  #armFrame.lifted { transform:translate(-50%,-50%) translateY(-13%) rotate(2.5deg); }
+  #armFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* S5 假人图等大容器：衬垫/止血带按假人原图 318×890 坐标定位，贴在右上臂 */
+  #bodyFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+  #bodyFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* S11 转运：仰卧假人平躺在担架上，整理衣物/固定带/伤情报告三个图内交互点 */
+  #finalPad { position:absolute; border-radius:18px;
+              background:linear-gradient(168deg,#f2f6f9 0%,#e0e8ef 40%,#ebf1f5 62%,#d2dce5 100%);
+              border:2px solid #c3ced8;
+              box-shadow:0 14px 28px rgba(38,50,64,.22),
+                         inset 0 2px 2px rgba(255,255,255,.92),
+                         inset 0 -3px 6px rgba(70,84,98,.16); }
+  #finalPad::before, #finalPad::after { content:""; position:absolute; left:-1.2%; right:-1.2%; height:7px;
+              border-radius:99px; background:linear-gradient(180deg,#eef2f5,#b3bec9 55%,#8e99a5);
+              box-shadow:0 2px 5px rgba(30,40,52,.28); }
+  #finalPad::before { top:-10px; }
+  #finalPad::after  { bottom:-10px; }
+  /* S5 衬垫/止血带：贴着上臂的卷与带（不用透明描边框，避免"浮在衣服上的卡片"） */
+  #bodyFrame .padRoll { border-radius:5px;
+    background:linear-gradient(180deg,#ffffff 0%,#f7f5ee 52%,#dcd7c9 100%);
+    box-shadow:0 1px 3px rgba(20,30,40,.30), inset 0 0 0 1px rgba(186,180,166,.95); }
+  #bodyFrame .tqRoll { border-radius:5px;
+    background:linear-gradient(180deg,#5d92d8 0%,#2a5cae 45%,#18396f 100%);
+    box-shadow:0 1px 3px rgba(10,20,40,.38), inset 0 1px 0 rgba(255,255,255,.38); }
+  #bodyFrame .tqRoll::after { content:""; position:absolute; right:-16%; top:20%; width:24%; height:60%;
+    border-radius:2px; background:linear-gradient(180deg,#d5dee7,#8d9aa8);
+    box-shadow:0 1px 2px rgba(0,0,0,.4); }
+  #finalFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:3; }
+  #finalFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  #finalFrame .actpt { width:29px; height:29px; }
+  #finalFrame .actpt.done { width:23px; height:23px; }
+  #finalFrame .actpt .n { font-size:12px; }
+  #finalFrame .actpt .lb { font-size:9.5px; padding:1px 5px; }
+  .strap { position:absolute; border-radius:3px; opacity:0; transition:opacity .45s; width:4% !important;
+           background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 3px,rgba(0,0,0,.07) 3px 6px),
+                      linear-gradient(90deg,#1f2b3a,#3d5570 46%,#1a2432);
+           box-shadow:0 1px 4px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.10); }
+  .strap.show { opacity:.97; }
+  .strap::before, .strap::after { content:""; position:absolute; left:50%; transform:translateX(-50%);
+                  width:136%; height:4px; border-radius:2px;
+                  background:linear-gradient(180deg,#e2e8ee,#9daab7 60%,#6f7c89);
+                  box-shadow:0 1px 2px rgba(0,0,0,.45); }
+  .strap::before { top:-2px; }
+  .strap::after  { bottom:-2px; }
+  #repNote { position:absolute; right:4%; top:44px; width:58%; background:#fffdf3; border:1px solid #d9c37a;
+             border-radius:9px; padding:6px 8px; font-size:10px; line-height:1.55; color:#5c4a12;
+             box-shadow:0 4px 12px rgba(0,0,0,.16); opacity:0; transform:scale(.88); transition:.4s; z-index:11; }
+  #repNote.show { opacity:1; transform:scale(1); }
+  #repNote b { color:#8a6d10; font-size:10.5px; }
+  /* 点选只在物品角打一个小对勾，不用大框大底色 */
+  .hot { position:absolute; width:16%; height:30%; border-radius:8px;
+         transform:translate(-50%,-50%); transition:.2s; cursor:pointer; }
+  .hot::after { content:""; position:absolute; right:-7px; top:-7px; width:21px; height:21px;
+                border-radius:50%; background:#1d9e75; color:#fff; font-size:13px; line-height:21px;
+                text-align:center; opacity:0; transform:scale(.6); transition:.18s;
+                box-shadow:0 1px 4px rgba(0,0,0,.22); }
+  .hot.sel::after { content:"✓"; opacity:1; transform:scale(1); }
+  .hot.wrong::after { content:"✗"; background:#d43a30; opacity:1; transform:scale(1); }
+  /* 绷带渐进揭示层：与裸臂同姿态，真正贴合皮肤 */
+  .band-reveal { position:absolute; inset:0; transition:clip-path .55s ease; }
+  /* 口述与提示 */
+  #oral { position:absolute; left:10px; right:10px; bottom:130px; background:rgba(28,34,44,.92); color:#fff;
+          border-radius:10px; padding:8px 12px; font-size:12px; line-height:1.55; }
+  #oral b { color:#ffd76e; display:block; font-size:12px; margin-bottom:2px; }
+  #note { position:absolute; left:10px; top:8px; font-size:11px; color:#5b6675;
+          background:rgba(255,255,255,.9); border:1px solid #d8dde4; border-radius:8px; padding:3px 9px; }
+  /* ---- 底栏 ---- */
+  #bar { flex:0 0 auto; position:absolute; left:0; right:0; bottom:0; background:#fff;
+         border-top:1px solid #d8dde4; padding:8px 10px 10px; display:flex; flex-direction:column; gap:6px; }
+  #acts { display:flex; gap:6px; flex-wrap:wrap; }
+  #acts button { flex:1 1 30%; background:#eef4fb; border:1px solid #9db6d8; color:#1f4e8c;
+                 border-radius:8px; padding:9px 6px; font-size:12px; min-height:38px; }
+  #acts button.done { background:#e8f7ee; border-color:#9fd8b7; color:#177a48; }
+  #acts button.done::before { content:"✓ "; }
+  #navRow { display:flex; gap:6px; }
+  #navRow button { flex:1; border:0; border-radius:8px; padding:11px 0; font-size:14px; font-weight:600; }
+  #nextBtn { background:#1d9e75; color:#fff; }
+  #resetBtn { background:#eef1f4; color:#5b6675; flex:0 0 84px; }
+  #rptBtn  { background:#f0a63a; color:#fff; flex:0 0 84px; }
+  /* ---- toast / 简报 ---- */
+  #toast { position:fixed; left:50%; top:96px; bottom:auto; transform:translateX(-50%) translateY(-8px); background:rgba(28,34,44,.94);
+           color:#fff; padding:9px 16px; border-radius:8px; font-size:13px; max-width:82vw; text-align:center;
+           opacity:0; transition:.3s; pointer-events:none; z-index:60; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  #report { position:fixed; inset:0; background:rgba(15,19,25,.6); z-index:80; display:none;
+            align-items:center; justify-content:center; padding:18px; }
+  #report.show { display:flex; }
+  #repCard { background:#fff; border-radius:14px; width:100%; max-width:360px; max-height:82vh;
+             display:flex; flex-direction:column; overflow:hidden; }
+  #repCard h3 { background:#2f3742; color:#fff; font-size:15px; padding:12px 14px; }
+  #repScore { text-align:center; padding:14px 0 4px; }
+  #repScore b { font-size:40px; color:#1d9e75; }
+  #repScore.bad b { color:#d43a30; }
+  #repScore span { display:block; font-size:12px; color:#5b6675; margin-top:2px; }
+  #repList { flex:1 1 auto; overflow:auto; padding:6px 16px 10px; font-size:12px; color:#33404f; line-height:1.7; }
+  #repList .it { color:#b3261e; }
+  #repList .ok { color:#177a48; }
+  #repClose { margin:0 16px 14px; background:#1d9e75; color:#fff; border:0; border-radius:8px; padding:12px 0; font-size:15px; font-weight:600; }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <span class="tt">K44-01 创伤包扎 · 右前臂螺旋反折法</span>
+  <span id="stepIdx">1/11</span>
+  <span id="curScore">100分</span>
+</div>
+<div id="stage">
+  <div id="scene"></div>
+  <div id="note"></div>
+  <div id="oral"><b id="oralT"></b><span id="oralC"></span></div>
+  <div id="bar">
+    <div id="acts"></div>
+    <div id="navRow">
+      <button id="resetBtn">复位</button>
+      <button id="nextBtn">下一步</button>
+      <button id="rptBtn">简报</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="report">
+  <div id="repCard">
+    <h3>考核简报 · K44-01 右前臂螺旋反折法包扎</h3>
+    <div id="repScore"><b>100</b><span>满分 100 · 扣分明细见下</span></div>
+    <div id="repList"></div>
+    <button id="repClose">完成并复位</button>
+  </div>
+</div>
+<script>(function(){'use strict';var IMG={'arm':'bandage/own-arm.webp','bareArm':'bandage/own-bare-arm.webp','supine':'bandage/own-supine.png','supineTorso':'bandage/own-supine-torso.webp','glove':'bandage/own-glove.webp','gloveW':'bandage/own-glove-white.webp','supplies':'bandage/own-supplies-alpha.webp','squat':'bandage/k44-01-squat.webp','pulse':'bandage/own-glove.webp','bandaged':'bandage/own-bandaged-v3.webp','finalSupine':'bandage/final-supine.webp'};for(var _0x18e959 in IMG){(function(_0x1c1eb7){var _0x4cd8b9=new Image();_0x4cd8b9['src']=_0x1c1eb7;}(IMG[_0x18e959]));}var DED={'env_safe':[0x5,'未评估现场环境安全（地面/电源/撤离通道）即开始施救'],'comfort':[0x5,'未蹲姿面向伤者、轻拍肩膀安慰并征得配合'],'miss_supply':[0x4,'漏选包扎所需物品：'],'wrong_supply':[0x3,'用纸巾替代无菌纱布（应选无菌纱布）'],'raise':[0x5,'未将伤肢抬高至高于心脏水平（抬高\x202\x20分钟示意）'],'pressure_self':[0x6,'未用右手拇指压在伤者右上臂肱动脉止血'],'pressure_aid':[0x5,'未将伤者健肢左手拇指放在右上臂肱动脉协助指压止血'],'pad':[0x5,'未在右上臂上\x201/3\x20处先加衬垫保护皮肤，再上止血带'],'tourniquet':[0x5,'未上止血带止血'],'tag':[0x5,'未用标牌记录上止血带的部位及时间'],'clean':[0x5,'未用无菌生理盐水冲洗或碘伏消毒创面'],'gauze':[0x5,'未用大于创面的无菌纱布覆盖创面'],'ring':[0x5,'未在纱布远端环形固定开始端\x202~3\x20圈'],'spiral':[0x5,'未由远端向近端螺旋反折包扎（每周向下反折、遮盖上周\x201/3~1/2，反折点成一直线）'],'fixband':[0x5,'最后未平绕一圈固定（敷料不能外露）'],'pulse':[0x5,'未扪右前臂桡动脉搏动检查止血效果'],'color':[0x5,'未检查肢体末端血液循环（颜色、温度）']};var SUPPLIES=[{'id':'gauze','name':'无菌纱布\x20×2','need':!![],'tx':0x14,'ty':0x15,'tw':0x14},{'id':'tq','name':'止血带','need':!![],'tx':0x32,'ty':0x15,'tw':0x11},{'id':'band','name':'绷带','need':!![],'tx':0x4f,'ty':0x15,'tw':0x13},{'id':'fluid','name':'生理盐水/碘伏','need':!![],'tx':0x12,'ty':0x2f,'tw':0xb},{'id':'swab','name':'棉签','need':!![],'tx':0x2f,'ty':0x2f,'tw':0x13},{'id':'tag','name':'标牌','need':!![],'tx':0x4d,'ty':0x2f,'tw':0x14},{'id':'pen','name':'中性笔','need':!![],'tx':0x14,'ty':0x49,'tw':0x13},{'id':'glove','name':'乳胶手套','need':![],'tx':0x31,'ty':0x49,'tw':0x14},{'id':'tissue','name':'纸巾','need':![],'tx':0x51,'ty':0x4a,'tw':0x16}];var STEPS=[{'key':'S1','group':'环境评估\x20·\x20安慰伤者','title':'环境评估\x20·\x20安慰伤者','oral':'先确认现场安全：地面稳固、电源已隔离、留有撤离通道；再蹲姿面向伤者，轻拍肩膀安慰并征得配合。','scene':'squat','note':'训练假人\x20·\x20右前臂开放性创伤约\x203~5cm\x20·\x20无骨折','acts':[{'id':'env_safe','label':'评估现场安全（点图中三个点）','ded':'env_safe','inScene':!![],'fx':function(R){}},{'id':'comfort','label':'蹲姿安慰\x20·\x20征得配合','ded':'comfort','inScene':!![],'fx':function(R){R['show']('touchHand');R['show']('capComfort');}}]},{'key':'S2','group':'选择物品','title':'选择包扎用品','oral':'选取：无菌纱布两块、止血带、绷带、无菌生理盐水或碘伏、棉签、标牌、中性笔。纱布要大于创面。','scene':'supplies','note':'点托盘上的器材\x20·\x20点前沿【确认选择】','supply':!![]},{'key':'S3','group':'抬高伤肢','title':'抬高伤肢\x20·\x20高于心脏','oral':'让伤者仰卧，将受伤右前臂抬高至心脏水平以上，保持约\x202\x20分钟（时间跳转示意），减少出血。','scene':'raise','note':'仰卧\x20·\x20水平支撑面\x20·\x20创面高于心脏','acts':[{'id':'raise','label':'抬高伤肢（高于心脏\x20·\x202min）','ded':'raise','inScene':!![],'fx':function(R){R['raiseArm']();}}]},{'key':'S4','group':'指压止血','title':'肱动脉指压止血','oral':'施救者右手拇指压在伤者右上臂肱动脉处；同时指导伤者用健肢左手拇指放在同处协助指压。','scene':'pressure','note':'右上臂肱动脉\x20·\x20双重指压（点图上两个按压点）','acts':[{'id':'p_self','label':'右拇指压肱动脉','ded':'pressure_self','inScene':!![],'fx':function(R){R['show']('gPress1');R['show']('mThumb');R['show']('capThumb');}},{'id':'p_aid','label':'伤者健肢拇指协助','ded':'pressure_aid','inScene':!![],'fx':function(R){R['show']('mThumb2');R['show']('capThumb2');}}]},{'key':'S5','group':'止血带','title':'衬垫\x20+\x20止血带','oral':'在右上臂上\x201/3\x20处先垫纱布保护皮肤，再上止血带；禁止直接绑在皮肤上。','scene':'tourniquet','note':'右上臂上\x201/3\x20·\x20先衬垫，后止血带（点图上两个点）','acts':[{'id':'pad','label':'上\x201/3\x20处加衬垫','ded':'pad','inScene':!![],'fx':function(R){R['show']('padBand');}},{'id':'tq','label':'上止血带','ded':'tourniquet','inScene':!![],'fx':function(R){R['show']('tqBand');}}]},{'key':'S6','group':'标牌记录','title':'标牌记录部位与时间','oral':'在额头或胸前等易发现部位，用标牌记录上止血带的部位及时间。','scene':'tag','note':'标牌放在胸前易发现处（点胸前）','acts':[{'id':'tag','label':'挂标牌\x20·\x20记录部位时间','ded':'tag','inScene':!![],'fx':function(R){R['show']('tagCard');}}]},{'key':'S7','group':'伤口处理','title':'冲洗消毒','oral':'检查伤口后，用无菌生理盐水冲洗创面（或碘伏棉签由中心向外消毒），勿用力擦拭。','scene':'clean','note':'生理盐水冲洗\x20/\x20碘伏消毒（点创面）','acts':[{'id':'clean','label':'冲洗\x20/\x20消毒创面','ded':'clean','inScene':!![],'fx':function(R){R['cleanWound']();}}]},{'key':'S8','group':'伤口处理','title':'无菌纱布覆盖','oral':'取无菌纱布覆盖创面，纱布边缘须大于创面约\x203cm。','scene':'gauze','note':'纱布\x20>\x20创面\x203cm（点创面）','acts':[{'id':'gauze','label':'覆盖无菌纱布','ded':'gauze','inScene':!![],'fx':function(R){R['show']('gauzePad');R['hide']('woundMark');}}]},{'key':'S9','group':'包扎','title':'螺旋反折法包扎','oral':'在纱布远端环形固定开始端\x202~3\x20圈；由肢体远端向近端螺旋缠绕，每周向下反折、遮盖上周的\x201/3~1/2，反折点成一直线、绷带边缘整齐，不在伤口或骨隆突处反折；最后平绕一圈固定，敷料不外露。','scene':'wrap','note':'远端\x20→\x20近端\x20·\x20每周向下反折（按\x201→2→3\x20点）','acts':[{'id':'ring','label':'远端环形固定\x202~3\x20圈','ded':'ring','inScene':!![],'fx':function(R){R['wrapRing']();}},{'id':'spiral','label':'螺旋反折缠绕','ded':'spiral','inScene':!![],'fx':function(R){R['wrapSpiral']();}},{'id':'fixb','label':'平绕一圈固定','ded':'fixband','inScene':!![],'fx':function(R){R['wrapFix']();}}]},{'key':'S10','group':'效果检查','title':'检查止血效果与末梢血运','oral':'用手指轻压右前臂桡动脉搏动，检查止血效果；观察肢体末端颜色、温度，判断血液循环。','scene':'pulse','note':'桡动脉\x20·\x20轻压检查\x20·\x20颜色\x20/\x20温度（点图上两个点）','acts':[{'id':'pulse','label':'扪桡动脉搏动','ded':'pulse','inScene':!![],'fx':function(R){R['show']('pulseInset');R['show']('pulseDot');R['show']('capPulse');}},{'id':'color','label':'查末梢颜色温度','ded':'color','inScene':!![],'fx':function(R){R['show']('capColor');}}]},{'key':'S11','group':'后续处理','title':'整理\x20·\x20固定\x20·\x20转运','oral':'拆除模型上的止血带（演练动作），整理伤者衣物与体位，用固定带固定体位，报告并等候转运去医院。','scene':'final','note':'伤者平卧于担架\x20·\x20按\x201→2→3\x20在假人身上依次操作','acts':[{'id':'tidy','label':'整理衣物与体位','ded':null,'inScene':!![],'fx':function(R){R['show']('capTidy');}},{'id':'strap','label':'固定带固定体位','ded':null,'inScene':!![],'fx':function(R){R['show']('strapA');R['show']('strapB');}},{'id':'handover','label':'转运\x20·\x20伤情报告','ded':null,'inScene':!![],'fx':function(R){R['show']('repNote');R['show']('capGo');}}]}];var cur=0x0,_0x3a6272=0x64,_0x240a97=[],_0x2a7b0b={},_0x423143={},_0x50de82={};var R={'_reg':{},'show':function(_0xb506bd){var _0x54c9b5=this['_reg'][_0xb506bd];if(_0x54c9b5)_0x54c9b5['classList']['add']('show');},'hide':function(_0x1b2149){var _0x550b6a=this['_reg'][_0x1b2149];if(_0x550b6a)_0x550b6a['classList']['remove']('show');},'showSvg':function(_0xc34bb0){var _0xe33c38=sceneEl['querySelector']('[data-b=\x22'+_0xc34bb0+'\x22]');if(_0xe33c38)_0xe33c38['classList']['add']('show');},'wrapRing':function(){this['revealBand'](0x1e);},'wrapSpiral':function(){this['revealBand'](0x4a);},'wrapFix':function(){this['revealBand'](0x64);var _0x11e2ff=this;setTimeout(function(){_0x11e2ff['finish']();},0x28a);},'revealBand':function(_0x585c71){var _0x4d9021=this['_reg']['bandReveal'];if(_0x4d9021)_0x4d9021['style']['clipPath']='inset(0\x20'+(0x64-_0x585c71)+'%\x200\x200)';},'finish':function(){toast('包扎完成\x20·\x20敷料不外露，等待检查血运');},'raiseArm':function(){this['show']('hl');this['show']('hArrow');this['show']('liftTag');this['show']('armMark');this['show']('clock');var _0x2ce0a2=document['getElementById']('armFrame');if(_0x2ce0a2){_0x2ce0a2['classList']['add']('lifted');}},'cleanWound':function(){this['show']('swab');this['show']('capClean');setTimeout(function(){var _0xbcac3d=R['_reg']['woundMark'];if(_0xbcac3d){_0xbcac3d['style']['opacity']=0.25;}},0x258);}};var $=function(_0x1abb97){return document['getElementById'](_0x1abb97);};var sceneEl=$('scene'),_0x1b0f4b=$('acts'),_0x53d1b5=$('note'),_0x3923ec=$('oralT'),_0x460bc9=$('oralC');var stepIdxEl=$('stepIdx'),_0x1a68ea=$('curScore'),_0x3aca2f=$('toast');function toast(_0x5bcbf4){_0x3aca2f['textContent']=_0x5bcbf4;_0x3aca2f['classList']['add']('show');clearTimeout(toast['_t']);toast['_t']=setTimeout(function(){_0x3aca2f['classList']['remove']('show');},0x708);}function refreshScore(){_0x1a68ea['textContent']=_0x3a6272+'分';}function dock(_0x5062a0){var _0x51f884=DED[_0x5062a0];if(!_0x51f884)return;_0x3a6272=Math['max'](0x0,_0x3a6272-_0x51f884[0x0]);_0x240a97['push'](_0x51f884[0x0]+'分\x20·\x20'+_0x51f884[0x1]);refreshScore();}function img(_0x53c659,_0x594a46){return'<img\x20class=\x22photo\x20'+(_0x594a46||'')+'\x22\x20src=\x22'+_0x53c659+'\x22>';}function buildScene(_0x31c211){sceneEl['innerHTML']='';R['_reg']={};var _0x1d6dd2='';if(_0x31c211['scene']==='squat'){var _0x19e3ed=[{'id':'power','n':'1','lb':'电源已隔离','x':0x10,'y':0x11},{'id':'floor','n':'2','lb':'地面稳固','x':0x30,'y':0x5b},{'id':'route','n':'3','lb':'撤离通道畅通','x':0x1b,'y':90.6}];_0x1d6dd2='<div\x20id=\x22squatFrame\x22>'+'<div\x20id=\x22squatFloor\x22></div>'+'<div\x20class=\x22bootSh\x22\x20style=\x22left:49%;top:92%;width:30%;height:8%\x22></div>'+'<div\x20class=\x22bootSh\x22\x20style=\x22left:78%;top:87%;width:24%;height:7%\x22></div>'+img(IMG['squat'])+'<div\x20id=\x22escSignSh\x22></div>'+'<img\x20id=\x22escSign\x22\x20src=\x22bandage/tools/exit-sign.webp\x22\x20alt=\x22\x22>'+'<div\x20id=\x22escArrow\x22></div>'+_0x19e3ed['map'](function(_0x35051e){return'<div\x20class=\x22envpt'+(_0x35051e['id']==='route'?'\x20lbtop':'')+'\x22\x20data-env=\x22'+_0x35051e['id']+'\x22\x20style=\x22left:'+_0x35051e['x']+'%;top:'+_0x35051e['y']+'%\x22>'+'<div\x20class=\x22d\x22><span>'+_0x35051e['n']+'</span></div><div\x20class=\x22lb\x22>'+_0x35051e['lb']+'</div></div>';})['join']('')+'<div\x20class=\x22cap\x22\x20style=\x22left:14%;top:70%\x22\x20data-r=\x22capComfort\x22>轻拍安慰\x20·\x20征得配合</div>'+'<div\x20class=\x22mark\x22\x20style=\x22left:11.5%;top:59%\x22\x20data-r=\x22touchHand\x22></div>'+'<div\x20class=\x22handpt\x22\x20data-r=\x22handpt\x22\x20style=\x22left:11.5%;top:59%\x22><span\x20class=\x22handpt-lb\x22>先完成现场检查</span></div>'+'</div>'+'<div\x20id=\x22envProgress\x22\x20data-r=\x22envProgress\x22>现场检查\x20<b>0/3</b></div>';}else if(_0x31c211['scene']==='supplies'){sceneEl['innerHTML']='<div\x20id=\x22supplyWrap\x22\x20class=\x22show\x22>'+'<div\x20id=\x22supplyImg\x22><div\x20id=\x22tray\x22><div\x20id=\x22trayWell\x22>'+SUPPLIES['map'](function(_0x5c5703){return'<div\x20class=\x22tool\x20note\x22\x20data-id=\x22'+_0x5c5703['id']+'\x22\x20data-note=\x22'+_0x5c5703['name']+'\x22\x20style=\x22left:'+_0x5c5703['tx']+'%;top:'+_0x5c5703['ty']+'%;width:'+_0x5c5703['tw']+'%\x22>'+'<img\x20src=\x22bandage/tools/'+_0x5c5703['id']+'.webp\x22\x20alt=\x22\x22><span\x20class=\x22tick\x22>✓</span></div>';})['join']('')+'</div><img\x20id=\x22pickHand\x22\x20src=\x22bandage/'+'own-glove-white.webp'+'\x22\x20alt=\x22\x22></div>'+'<div\x20id=\x22trayConfirm\x22>确认选择\x20<b\x20id=\x22selCnt\x22>0/7</b></div>'+'</div>';var _0x1301c7=document['getElementById']('trayConfirm');if(_0x1301c7)_0x1301c7['addEventListener']('click',judgeSupply);var _0x20ce51=sceneEl['querySelectorAll']('.tool');for(var _0x2b1aee=0x0;_0x2b1aee<_0x20ce51['length'];_0x2b1aee++){_0x20ce51[_0x2b1aee]['addEventListener']('click',function(){var _0x52bc0a=this;var _0xbdc34d=!_0x52bc0a['classList']['contains']('picked');_0x52bc0a['classList']['toggle']('picked',_0xbdc34d);_0x2a7b0b[_0x52bc0a['dataset']['id']]=_0xbdc34d;if(_0xbdc34d){var _0x4e7143=null;SUPPLIES['forEach'](function(_0x2078f3){if(_0x2078f3['id']===_0x52bc0a['dataset']['id'])_0x4e7143=_0x2078f3;});var _0x40834a=document['getElementById']('pickHand');if(_0x4e7143&&_0x40834a){_0x40834a['style']['left']=_0x4e7143['tx']-0x9+'%';_0x40834a['style']['top']=_0x4e7143['ty']-0x14+'%';_0x40834a['classList']['remove']('reach');void _0x40834a['offsetWidth'];_0x40834a['classList']['add']('reach');}}var _0x1fa32d=0x0,_0xe30f15=0x0;SUPPLIES['forEach'](function(_0x3a72a7){if(_0x3a72a7['need']){_0x1fa32d++;if(_0x2a7b0b[_0x3a72a7['id']])_0xe30f15++;}});var _0x5a6d55=document['getElementById']('selCnt');if(_0x5a6d55)_0x5a6d55['textContent']=_0xe30f15+'/'+_0x1fa32d;if(_0x1301c7)_0x1301c7['classList']['toggle']('ready',_0xe30f15>=_0x1fa32d);});}layoutSupply();return;}else if(_0x31c211['scene']==='raise'){_0x1d6dd2='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22mark\x22\x20style=\x22left:44.3%;top:49.9%\x22\x20data-r=\x22armMark\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22raise\x22\x20style=\x22left:52%;top:42%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20抬高伤肢</span></div>'+'</div>'+'<div\x20class=\x22hLine\x22\x20style=\x22top:58%\x22\x20data-r=\x22hl\x22><span\x20class=\x22hl-tag\x22>心脏水平线</span></div>'+'<div\x20class=\x22hArrow\x22\x20style=\x22top:40%;height:18%\x22\x20data-r=\x22hArrow\x22></div>'+'<div\x20class=\x22liftTag\x22\x20style=\x22left:63%;top:22%\x22\x20data-r=\x22liftTag\x22>↑\x20创面高于心脏</div>'+'<div\x20id=\x22raiseClock\x22\x20data-r=\x22clock\x22><b>02:00</b>\x20·\x20抬高\x202\x20分钟（示意）</div>';}else if(_0x31c211['scene']==='pressure'){_0x1d6dd2='<div\x20class=\x22limbStage\x22>'+'<div\x20id=\x22limbFrame\x22>'+'<img\x20class=\x22limbPhoto\x22\x20src=\x22'+IMG['bareArm']+'\x22\x20alt=\x22\x22>'+'<img\x20class=\x22glovePress\x22\x20src=\x22'+IMG['gloveW']+'\x22\x20style=\x22left:47%;top:39%\x22\x20data-r=\x22gPress1\x22\x20alt=\x22\x22>'+'<div\x20class=\x22pressSpot\x22\x20style=\x22left:47%;top:39%\x22\x20data-r=\x22mThumb\x22></div>'+'<div\x20class=\x22pressSpot\x20aid\x22\x20style=\x22left:44%;top:59%\x22\x20data-r=\x22mThumb2\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22p_self\x22\x20style=\x22left:47%;top:39%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20右拇指按压</span></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22p_aid\x22\x20data-need=\x22p_self\x22\x20data-tip=\x22先点①\x20施救者右拇指按压肱动脉\x22\x20style=\x22left:44%;top:59%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>健肢左拇指协助</span></div>'+'</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:68%\x22\x20data-r=\x22capThumb\x22>施救者右拇指\x20·\x20肱动脉</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:38%;top:78%\x22\x20data-r=\x22capThumb2\x22>伤者健肢左拇指协助</div>'+'</div>';}else if(_0x31c211['scene']==='tourniquet'){_0x1d6dd2='<div\x20id=\x22bodyFrame\x22>'+img(IMG['supine'])+'<div\x20class=\x22layer\x20padRoll\x22\x20data-r=\x22padBand\x22\x20style=\x22left:1.5%;top:42%;width:13.6%;height:2.3%;opacity:0\x22></div>'+'<div\x20class=\x22layer\x20tqRoll\x22\x20data-r=\x22tqBand\x22\x20style=\x22opacity:0;left:1.1%;top:51%;width:14.2%;height:2.5%;opacity:0\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22pad\x22\x20style=\x22left:13%;top:43%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20先加衬垫</span></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22tq\x22\x20data-need=\x22pad\x22\x20data-tip=\x22先点①\x20在上\x201/3\x20处加衬垫\x22\x20style=\x22left:13%;top:52%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>再上止血带</span></div>'+'</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:22%;top:56%\x22\x20data-r=\x22capTq\x22>上\x201/3\x20·\x20衬垫\x20→\x20止血带</div>';}else if(_0x31c211['scene']==='tag'){_0x1d6dd2='<div\x20id=\x22bodyFrame\x22>'+img(IMG['supine'])+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22tag\x22\x20style=\x22left:52%;top:36%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点胸前\x20·\x20挂标牌</span></div>'+'<div\x20id=\x22tagCard\x22\x20data-r=\x22tagCard\x22>部位：右上臂<br>时间：<span\x20id=\x22tagTime\x22></span><br>（胸前易发现处）</div>'+'</div>';}else if(_0x31c211['scene']==='clean'){_0x1d6dd2='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22mark\x22\x20style=\x22left:44.3%;top:49.9%\x22\x20data-r=\x22woundMark\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22clean\x22\x20style=\x22left:44.3%;top:41%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点创面\x20·\x20冲洗消毒</span></div>'+'<div\x20class=\x22layer\x22\x20data-r=\x22swab\x22\x20style=\x22left:40%;top:45%;width:9%;height:10%;background:#cfe3f7;border:1px\x20solid\x20#8db4dc;border-radius:4px;opacity:0\x22></div>'+'</div><div\x20class=\x22cap\x22\x20style=\x22left:44%;top:68%\x22\x20data-r=\x22capClean\x22>生理盐水冲洗\x20/\x20碘伏消毒</div>';}else if(_0x31c211['scene']==='gauze'){_0x1d6dd2='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22gauze\x22\x20style=\x22left:44.3%;top:38%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点创面\x20·\x20盖无菌纱布</span></div>'+'<div\x20class=\x22layer\x22\x20data-r=\x22gauzePad\x22\x20style=\x22left:36%;top:40.5%;width:16%;height:19%;background:#fdfdfb;border:2px\x20solid\x20#cfc9bb;border-radius:8px;opacity:0;box-shadow:0\x202px\x206px\x20rgba(0,0,0,.12)\x22></div>'+'</div><div\x20class=\x22cap\x22\x20style=\x22left:44%;top:72%\x22\x20data-r=\x22capGauze\x22>纱布边缘\x20>\x20创面\x203cm</div>';}else if(_0x31c211['scene']==='wrap'){_0x1d6dd2='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22band-reveal\x22\x20data-r=\x22bandReveal\x22\x20style=\x22clip-path:inset(0\x200\x200\x20100%)\x22>'+'<img\x20class=\x22photo\x22\x20src=\x22'+IMG['bandaged']+'\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22ring\x22\x20style=\x22left:34%;top:44%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>远端环形固定</span></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22spiral\x22\x20data-need=\x22ring\x22\x20data-tip=\x22先点①\x20在远端环形固定\x202~3\x20圈\x22\x20style=\x22left:47%;top:52%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>螺旋反折</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22fixb\x22\x20data-need=\x22spiral\x22\x20data-tip=\x22先点②\x20由远端向近端螺旋反折\x22\x20style=\x22left:60%;top:43%\x22><span\x20class=\x22n\x22>3</span><span\x20class=\x22lb\x22>平绕固定</span></div>'+'</div><div\x20class=\x22cap\x22\x20style=\x22left:50%;top:76%\x22\x20data-r=\x22capWrap\x22>环形固定\x20→\x20螺旋反折\x20→\x20平绕固定</div>';}else if(_0x31c211['scene']==='pulse'){_0x1d6dd2='<div\x20id=\x22armFrame\x22>'+img(IMG['bandaged'])+'<img\x20class=\x22glovePress\x22\x20src=\x22'+IMG['gloveW']+'\x22\x20style=\x22left:27%;top:46%;transform:translate(-50%,-50%)\x20rotate(-24deg)\x22\x20data-r=\x22pulseInset\x22\x20alt=\x22\x22>'+'<div\x20class=\x22pressSpot\x22\x20style=\x22left:27%;top:46%\x22\x20data-r=\x22pulseDot\x22></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22pulse\x22\x20style=\x22left:27%;top:46%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20摸桡动脉</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x20lbleft\x22\x20data-act=\x22color\x22\x20data-need=\x22pulse\x22\x20data-tip=\x22先点①\x20扪桡动脉搏动\x22\x20style=\x22left:11%;top:37%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>查末梢颜色温度</span></div>'+'</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:30%;top:70%\x22\x20data-r=\x22capPulse\x22>桡动脉\x20·\x20腕部拇指侧\x20·\x20轻压</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:54%;top:73%\x22\x20data-r=\x22capColor\x22>末梢血运：颜色红润\x20·\x20温度正常</div>';}else if(_0x31c211['scene']==='final'){_0x1d6dd2='<div\x20id=\x22finalPad\x22></div>'+'<div\x20id=\x22finalFrame\x22>'+img(IMG['finalSupine'])+'<div\x20class=\x22strap\x22\x20data-r=\x22strapA\x22\x20style=\x22left:33%;top:13%;width:3.4%;height:76%\x22></div>'+'<div\x20class=\x22strap\x22\x20data-r=\x22strapB\x22\x20style=\x22left:64%;top:19%;width:3.4%;height:68%\x22></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22tidy\x22\x20style=\x22left:44%;top:74%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>整理衣物</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22strap\x22\x20data-need=\x22tidy\x22\x20data-tip=\x22先点①\x20整理伤者衣物与体位\x22\x20style=\x22left:64%;top:34%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>固定带固定体位</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22handover\x22\x20data-need=\x22strap\x22\x20data-tip=\x22先点②\x20用固定带固定体位\x22\x20style=\x22left:14%;top:29%\x22><span\x20class=\x22n\x22>3</span><span\x20class=\x22lb\x22>转运\x20·\x20伤情报告</span></div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:26%;top:96%\x22\x20data-r=\x22capTidy\x22>衣物平整\x20·\x20体位自然</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:78%;top:96%\x22\x20data-r=\x22capGo\x22>急救车\x20→\x20医院\x20·\x20已交接</div>'+'</div>'+'<div\x20id=\x22repNote\x22\x20data-r=\x22repNote\x22><b>伤情报告\x20·\x20已交接</b><br>'+'创面：右前臂开放伤，已加压包扎<br>'+'止血带：右上臂上\x201/3，时间已记录<br>'+'末梢：颜色红润、温度正常</div>';}sceneEl['innerHTML']=_0x1d6dd2;var _0x55c181=sceneEl['querySelectorAll']('[data-r]');for(var _0xb7e9f4=0x0;_0xb7e9f4<_0x55c181['length'];_0xb7e9f4++){R['_reg'][_0x55c181[_0xb7e9f4]['getAttribute']('data-r')]=_0x55c181[_0xb7e9f4];}if(_0x31c211['scene']==='tag'){var _0xfd1c69=$('tagTime');if(_0xfd1c69)_0xfd1c69['textContent']=timeStr();}if(_0x31c211['scene']==='clean'){R['show']('woundMark');}if(['clean','gauze','raise','wrap','pulse']['indexOf'](_0x31c211['scene'])>=0x0){layoutArmFrame();}if(_0x31c211['scene']==='pressure'){layoutLimbFrame();}if(_0x31c211['scene']==='tourniquet'||_0x31c211['scene']==='tag'){layoutBodyFrame();}if(_0x31c211['scene']==='squat'){layoutSquatFrame();var _0x34b666=sceneEl['querySelector']('.handpt');function _0x418bcc(){if(!_0x34b666)return;_0x34b666['classList']['add']('ready');var _0x18267e=_0x34b666['querySelector']('.handpt-lb');if(_0x18267e)_0x18267e['textContent']='点我\x20·\x20安慰伤者';}var _0x1a6f03=sceneEl['querySelectorAll']('.envpt');for(var _0x3b25b9=0x0;_0x3b25b9<_0x1a6f03['length'];_0x3b25b9++){_0x1a6f03[_0x3b25b9]['addEventListener']('click',function(){if(this['classList']['contains']('ok'))return;this['classList']['add']('ok');var _0x9745ee=sceneEl['querySelectorAll']('.envpt.ok')['length'];var _0x4239bf=sceneEl['querySelector']('#envProgress');if(_0x4239bf){_0x4239bf['querySelector']('b')['textContent']=_0x9745ee+'/3';if(_0x9745ee===0x3)_0x4239bf['classList']['add']('done');}if(_0x9745ee===0x3){var _0x240278=_0x1b0f4b['querySelector']('[data-act=\x22env_safe\x22]');if(_0x240278&&!_0x240278['classList']['contains']('done')){doAct(STEPS[cur]['acts'][0x0],_0x240278);}_0x418bcc();toast('现场环境安全\x20·\x20三点已确认\x20·\x20点伤者手部安慰');}});}if(_0x34b666){_0x34b666['addEventListener']('click',function(){if(this['classList']['contains']('done'))return;var _0x4b67b9=_0x1b0f4b['querySelector']('[data-act=\x22env_safe\x22]');if(!_0x4b67b9||!_0x4b67b9['classList']['contains']('done')){toast('请先点图中三个环境检查点，确认现场安全');return;}this['classList']['add']('done');this['classList']['remove']('ready');var _0x3d9bb0=this['querySelector']('.handpt-lb');if(_0x3d9bb0)_0x3d9bb0['textContent']='已安慰\x20·\x20征得配合';var _0x40c644=_0x1b0f4b['querySelector']('[data-act=\x22comfort\x22]');if(_0x40c644&&!_0x40c644['classList']['contains']('done'))doAct(STEPS[cur]['acts'][0x1],_0x40c644);});}}}function layoutSquatFrame(){var _0xc92ad8=document['getElementById']('scene'),_0xcbddf7=document['getElementById']('squatFrame');if(!_0xc92ad8||!_0xcbddf7)return;var _0x395c08=_0xc92ad8['clientWidth'],_0x533f79=_0xc92ad8['clientHeight'];if(!_0x395c08||!_0x533f79)return;var _0xbe662c=_0x533f79,_0x5ce49e=document['getElementById']('oral');if(_0x5ce49e){var _0x38ce34=_0xc92ad8['getBoundingClientRect'](),_0x2c875f=_0x5ce49e['getBoundingClientRect']();if(_0x2c875f['height']>0x0)_0xbe662c=Math['max'](0xf0,Math['round'](_0x2c875f['top']-_0x38ce34['top']-0xa));}var _0x4e1603=Math['min'](_0x395c08/0x374,_0xbe662c/0x384);var _0x35875b=Math['round'](0x384*_0x4e1603);_0xcbddf7['style']['width']=Math['round'](0x374*_0x4e1603)+'px';_0xcbddf7['style']['height']=_0x35875b+'px';_0xcbddf7['style']['top']=Math['round'](Math['min'](_0x533f79/0x2,_0xbe662c-_0x35875b/0x2))+'px';}function timeStr(){var _0x399570=new Date();return('0'+_0x399570['getHours']())['slice'](-0x2)+':'+('0'+_0x399570['getMinutes']())['slice'](-0x2)+':'+('0'+_0x399570['getSeconds']())['slice'](-0x2);}function layoutSupply(){var _0x1d4ca8=document['getElementById']('supplyImg'),_0x4546c2=document['getElementById']('supplyFrame');if(!_0x1d4ca8||!_0x4546c2)return;var _0x36a8ed=_0x1d4ca8['clientWidth'],_0x2b0d5b=_0x1d4ca8['clientHeight'];if(!_0x36a8ed||!_0x2b0d5b)return;var _0x67905c=Math['min'](_0x36a8ed/0x3c0,_0x2b0d5b/0x280);_0x4546c2['style']['width']=Math['round'](0x3c0*_0x67905c)+'px';_0x4546c2['style']['height']=Math['round'](0x280*_0x67905c)+'px';}function layoutArmFrame(){var _0x119277=document['getElementById']('scene'),_0x55b698=document['getElementById']('armFrame');if(!_0x119277||!_0x55b698)return;var _0x636309=_0x119277['clientWidth'],_0x2db43e=_0x119277['clientHeight'];if(!_0x636309||!_0x2db43e)return;var _0x15f7d9=Math['min'](_0x636309/0x480,_0x2db43e/0x300);_0x55b698['style']['width']=Math['round'](0x480*_0x15f7d9)+'px';_0x55b698['style']['height']=Math['round'](0x300*_0x15f7d9)+'px';}function layoutLimbFrame(){var _0x3be91c=document['getElementById']('scene'),_0x54f2bc=document['getElementById']('limbFrame');if(!_0x3be91c||!_0x54f2bc)return;var _0xea759=_0x3be91c['clientWidth'],_0x4904a1=_0x3be91c['clientHeight'];if(!_0xea759||!_0x4904a1)return;var _0x51f189=_0x4904a1*0.64,_0xded689=_0x51f189*0x480/0x300;_0x54f2bc['style']['width']=Math['round'](_0xded689)+'px';_0x54f2bc['style']['height']=Math['round'](_0x51f189)+'px';_0x54f2bc['style']['left']=Math['round'](_0xea759*0.02)+'px';_0x54f2bc['style']['top']=Math['round'](_0x4904a1*0.46-_0x51f189*0.5)+'px';}function layoutBodyFrame(){var _0x70f682=document['getElementById']('scene'),_0x50d3bf=document['getElementById']('bodyFrame');if(!_0x70f682||!_0x50d3bf)return;var _0x51b1d5=_0x70f682['clientWidth'],_0x326295=_0x70f682['clientHeight'];if(!_0x51b1d5||!_0x326295)return;var _0x236343=Math['min'](_0x51b1d5/0x13e,_0x326295/0x37a);_0x50d3bf['style']['width']=Math['round'](0x13e*_0x236343)+'px';_0x50d3bf['style']['height']=Math['round'](0x37a*_0x236343)+'px';}function layoutFinalFrame(){var _0x32a4e3=document['getElementById']('scene'),_0x453a23=document['getElementById']('finalFrame'),_0x1a9317=document['getElementById']('finalPad');if(!_0x32a4e3||!_0x453a23)return;var _0x5176c3=_0x32a4e3['clientWidth'],_0x3fff83=_0x32a4e3['clientHeight'];if(!_0x5176c3||!_0x3fff83)return;var _0x5ed96b=Math['min'](_0x5176c3*0.9/0x37a,_0x3fff83*0.6/0x13e);var _0x405bc3=Math['round'](0x37a*_0x5ed96b),_0x23750e=Math['round'](0x13e*_0x5ed96b);_0x453a23['style']['width']=_0x405bc3+'px';_0x453a23['style']['height']=_0x23750e+'px';if(_0x1a9317){var _0x2cbc3e=Math['round'](_0x405bc3*1.1),_0x27d56d=Math['round'](_0x23750e*1.78);_0x1a9317['style']['width']=_0x2cbc3e+'px';_0x1a9317['style']['height']=_0x27d56d+'px';_0x1a9317['style']['left']=Math['round']((_0x5176c3-_0x2cbc3e)/0x2)+'px';_0x1a9317['style']['top']=Math['round']((_0x3fff83-_0x27d56d)/0x2)+'px';}}window['addEventListener']('resize',function(){relayoutFrames();});function bandRect(_0x3c7a7d,_0x3b2b05,_0x3dbd4f){return'<rect\x20class=\x22band\x22\x20data-b=\x22'+_0x3dbd4f+'\x22\x20x=\x22'+(_0x3c7a7d-_0x3b2b05/0x2)+'\x22\x20y=\x22300\x22\x20width=\x22'+_0x3b2b05+'\x22\x20height=\x22176\x22\x20rx=\x2218\x22\x20fill=\x22#f5f1e6\x22\x20stroke=\x22#d8d2c2\x22\x20stroke-width=\x223\x22/>';}function ringBands(){return bandRect(0x249,0x26,'r1')+bandRect(0x228,0x26,'r2')+bandRect(0x207,0x26,'r3');}function spiralBands(){var _0x169156='',_0x2edd41=0x1e5;for(var _0x16d7e0=0x0;_0x16d7e0<0x6;_0x16d7e0++){_0x169156+='<g\x20class=\x22band\x22\x20data-b=\x22s'+_0x16d7e0+'\x22>'+(_0x16d7e0===0x0?'<rect\x20x=\x22112\x22\x20y=\x22302\x22\x20width=\x22486\x22\x20height=\x22172\x22\x20fill=\x22#f5f1e6\x22/>':'')+'<path\x20d=\x22M\x20'+_0x2edd41+'\x20313\x20L\x20'+(_0x2edd41-0x2a)+'\x20463\x20L\x20'+(_0x2edd41-0x5c)+'\x20463\x20L\x20'+(_0x2edd41-0x2d)+'\x20313\x20Z\x22\x20fill=\x22#f5f1e6\x22\x20stroke=\x22#d8d2c2\x22\x20stroke-width=\x223\x22/>'+'<path\x20d=\x22M\x20'+(_0x2edd41-0x2a)+'\x20463\x20l\x2015\x2012\x20l\x2013\x20-12\x22\x20fill=\x22none\x22\x20stroke=\x22#b9b0a0\x22\x20stroke-width=\x224\x22/>'+'</g>';_0x2edd41-=0x44;}return _0x169156;}function fixBand(){return bandRect(0x6c,0x2c,'f1');}function renderStep(){var _0x502779=STEPS[cur];stepIdxEl['textContent']=cur+0x1+'/'+STEPS['length'];_0x3923ec['textContent']='第'+(cur+0x1)+'步\x20·\x20'+_0x502779['group'];_0x460bc9['textContent']=_0x502779['oral'];_0x53d1b5['textContent']=_0x502779['note']||'';_0x2a7b0b={};_0x423143={};buildScene(_0x502779);_0x1b0f4b['innerHTML']='';if(_0x502779['supply']){}else{_0x502779['acts']['forEach'](function(_0x5ef096){var _0x48c78e=document['createElement']('button');_0x48c78e['textContent']=_0x5ef096['label'];_0x48c78e['setAttribute']('data-act',_0x5ef096['id']);if(_0x5ef096['inScene'])_0x48c78e['style']['display']='none';_0x48c78e['addEventListener']('click',function(){doAct(_0x5ef096,_0x48c78e);});_0x1b0f4b['appendChild'](_0x48c78e);});}var _0xc556e0=0x0;if(_0x502779['acts'])_0x502779['acts']['forEach'](function(_0x1fe081){if(!_0x1fe081['inScene'])_0xc556e0++;});var _0x54651d=document['getElementById']('stage');if(_0x54651d)_0x54651d['classList']['toggle']('noacts',_0xc556e0===0x0);bindSceneActs();requestAnimationFrame(relayoutFrames);}function findAct(_0x41a1ba){var _0x35f923=null;(STEPS[cur]['acts']||[])['forEach'](function(_0x279648){if(_0x279648['id']===_0x41a1ba)_0x35f923=_0x279648;});return _0x35f923;}function bindSceneActs(){var _0x466a71=sceneEl['querySelectorAll']('.actpt');for(var _0x3b575a=0x0;_0x3b575a<_0x466a71['length'];_0x3b575a++){_0x466a71[_0x3b575a]['addEventListener']('click',function(){var _0x50ed59=this['getAttribute']('data-act');var _0xf0720f=_0x1b0f4b['querySelector']('[data-act=\x22'+_0x50ed59+'\x22]');if(!_0xf0720f||_0xf0720f['classList']['contains']('done'))return;var _0x5141e9=this['getAttribute']('data-need');if(_0x5141e9){var _0x2677db=!![];_0x5141e9['split'](',')['forEach'](function(_0x23726f){if(!_0x50de82[cur+':'+_0x23726f]){_0x2677db=![];}});if(!_0x2677db){toast(this['getAttribute']('data-tip')||'请先完成上一步动作');return;}}this['classList']['add']('done');var _0x302cac=this['querySelector']('.n');if(_0x302cac)_0x302cac['textContent']='✓';var _0xd2a3c5=findAct(_0x50ed59);if(_0xd2a3c5)doAct(_0xd2a3c5,_0xf0720f);});}}function relayoutFrames(){layoutSupply();layoutArmFrame();layoutLimbFrame();layoutBodyFrame();layoutSquatFrame();layoutFinalFrame();}var autoT=null;function doAct(_0x378315,_0x3c0ac5){if(_0x3c0ac5['classList']['contains']('done'))return;_0x3c0ac5['classList']['add']('done');_0x50de82[cur+':'+_0x378315['id']]=!![];try{_0x378315['fx']&&_0x378315['fx'](R);}catch(_0x5b2255){}var _0x11d1a5=STEPS[cur];var _0x48ba17=_0x11d1a5['acts']['every'](function(_0x291a81){return _0x50de82[cur+':'+_0x291a81['id']];});if(_0x48ba17){clearTimeout(autoT);autoT=setTimeout(nextStep(!![]),0x5dc);}}function nextStep(_0x299209){return function(){if(autoT){clearTimeout(autoT);autoT=null;}var _0x57d424=STEPS[cur];if(!_0x57d424['supply']){_0x57d424['acts']['forEach'](function(_0x38f837){if(!_0x50de82[cur+':'+_0x38f837['id']]&&_0x38f837['ded']){dock(_0x38f837['ded']);}});}if(cur<STEPS['length']-0x1){cur++;renderStep();if(!_0x299209)toast('进入第\x20'+(cur+0x1)+'\x20步');}else{openReport();}};}function judgeSupply(){var _0x33b332=[],_0x2b91b0=[];SUPPLIES['forEach'](function(_0x578730){if(_0x578730['need']&&!_0x2a7b0b[_0x578730['id']])_0x33b332['push'](_0x578730['name']);});if(_0x2a7b0b['tissue'])_0x2b91b0['push']('tissue');_0x33b332['forEach'](function(_0x3f0e84){dock('miss_supply');_0x240a97[_0x240a97['length']-0x1]+=_0x3f0e84;});if(_0x2b91b0['length'])dock('wrong_supply');if(_0x33b332['length']===0x0&&!_0x2b91b0['length']){toast('物品齐全\x20·\x20纱布大于创面');}nextStep(![])();}function openReport(){var _0x270f48=$('report'),_0x38f144=$('repList'),_0x3df2c1=$('repScore');_0x3df2c1['querySelector']('b')['textContent']=_0x3a6272;_0x3df2c1['className']=_0x3a6272>=0x3c?'':'bad';_0x3df2c1['querySelector']('span')['textContent']=_0x3a6272>=0x3c?'满分\x20100\x20·\x20合格（≥60）·\x20扣分明细见下':'满分\x20100\x20·\x20不合格（<60）·\x20扣分明细见下';var _0x2660f9='';if(_0x240a97['length']===0x0){_0x2660f9='<div\x20class=\x22ok\x22>✓\x20全部关键动作完成，无扣分项。</div>';}else{_0x2660f9='<div>扣分\x20'+_0x240a97['length']+'\x20项：</div>';_0x240a97['forEach'](function(_0x59b2db){_0x2660f9+='<div\x20class=\x22it\x22>•\x20'+_0x59b2db+'</div>';});}_0x2660f9+='<div\x20style=\x22margin-top:8px;color:#5b6675\x22>考核口径：K44-01\x20创伤包扎考位\x20·\x20右前臂螺旋反折法（题库口径）</div>';_0x38f144['innerHTML']=_0x2660f9;_0x270f48['classList']['add']('show');}$('repClose')['addEventListener']('click',function(){$('report')['classList']['remove']('show');resetAll();});function resetAll(){cur=0x0;_0x3a6272=0x64;_0x240a97=[];_0x50de82={};_0x2a7b0b={};_0x423143={};refreshScore();renderStep();toast('已复位\x20·\x20从第\x201\x20步重新开始');}$('resetBtn')['addEventListener']('click',resetAll);$('nextBtn')['addEventListener']('click',nextStep(![]));$('rptBtn')['addEventListener']('click',openReport);renderStep();refreshScore();}());</script>
+</body>
+</html>

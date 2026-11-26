@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>应急处置 · 分步模拟（K41/K42/K43）</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;}
+body{font-family:-apple-system,"PingFang SC",sans-serif;background:#eef1f6;color:#222;padding-bottom:20px;}
+.hd{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;padding:16px;display:flex;align-items:center;gap:10px;}
+.hd b{font-size:16px;}
+.hd .back{cursor:pointer;font-size:18px;}
+.tabs{display:flex;margin:12px;gap:8px;}
+.tabs button{flex:1;padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:600;background:#fff;color:#666;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+.tabs button.on{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;}
+.scene{margin:0 12px;background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);min-height:220px;font-size:15px;line-height:1.9;}
+.scene .emoji{font-size:52px;text-align:center;margin:10px 0;}
+.scene .say{text-align:center;color:#555;font-size:14px;}
+.steps{margin:12px;display:flex;flex-direction:column;gap:8px;}
+.step{background:#fff;border-radius:12px;padding:14px 16px;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.05);display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s;}
+.step:active{transform:scale(.98);}
+.step .n{width:30px;height:30px;border-radius:50%;background:#e2e8f0;color:#334;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
+.step.ok{background:#f0fdf4;}
+.step.ok .n{background:#22c55e;color:#fff;}
+.step.err{background:#fef2f2;}
+.step.err .n{background:#ef4444;color:#fff;}
+.step .t{flex:1;}
+.step .mark{font-size:18px;}
+.result{margin:12px;padding:14px;border-radius:12px;font-size:14px;line-height:1.8;display:none;}
+.result.good{background:#dcfce7;color:#166534;display:block;}
+.result.bad{background:#fee2e2;color:#991b1b;display:block;}
+.btns{display:flex;gap:10px;margin:0 12px;}
+.btns button{flex:1;padding:13px;border:none;border-radius:12px;font-size:15px;font-weight:600;}
+#btn-submit{background:#ef4444;color:#fff;}
+#btn-reset{background:#e5e7eb;}
+.rule{margin:12px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;font-size:12px;color:#92400e;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="hd"><span class="back" onclick="location='index.html'">←</span><b>应急处置 · 分步流程模拟</b></div>
+<div class="tabs">
+  <button class="on" onclick="showCase(0,this)">低压触电<br>应急处置</button>
+  <button onclick="showCase(1,this)">心肺复苏<br>CPR</button>
+  <button onclick="showCase(2,this)">灭火器<br>选择使用</button>
+</div>
+
+<div class="rule" id="rule"></div>
+<div class="scene" id="scene"></div>
+<div class="steps" id="steps"></div>
+<div class="result" id="result"></div>
+<div class="btns">
+  <button id="btn-reset" onclick="reset()">重置</button>
+  <button id="btn-submit" onclick="submit()">提交判定</button>
+</div>
+
+<script>
+// ===== data from PDF scoring tables =====
+const CASES=[
+{
+ name:"K41-01 低压触电事故现场的应急处理",
+ rule:"K41 评分要点：判断环境(扣20) → 脱离电源(扣20，安全不合格项) → 移至安全通风处(扣20) → 检查意识呼吸(扣20) → 拨打120(扣20)。顺序错误或漏步即扣分。",
+ scene:['⚠️ 场景：一名工人在操作电箱时触电倒地，手仍抓着带电的电线。','周围有人围观，现场潮湿。'],
+ steps:[
+  {t:"张开双臂环顾四周，判断环境是否安全，阻止无关人员靠近（口述）",ok:true},
+  {t:"直接冲过去把触电者拉开",ok:false,why:"湿手/未断电接触触电者=二次触电！应先断电或用绝缘工具"},
+  {t:"关闭电源开关（或用干燥木棍等绝缘工具使触电者脱离电源）",ok:true},
+  {t:"用手直接掰开触电者抓电线的手",ok:false,why:"未断电严禁徒手接触！"},
+  {t:"将伤者移动到安全通风地点，避免二次伤害",ok:true},
+  {t:"呼叫伤者判断意识，检查呼吸",ok:true},
+  {t:"拨打 120 急救电话并报告地点与伤情",ok:true},
+  {t:"给伤者喂水唤醒",ok:false,why:"昏迷伤者禁止喂水喂食，可能窒息"}
+ ]
+},
+{
+ name:"K42-01 单人徒手心肺复苏",
+ rule:"K42 评分要点：评估环境 → 判断意识呼吸(10秒内) → 呼救(120+取AED) → 胸外按压位置(两乳头连线中点)与深度(5-6cm)频率(100-120次/分) → 开放气道 → 人工呼吸 30:2，循环5组。",
+ scene:['🏥 场景：同事突然倒地，无意识、无呼吸。','你已佩戴一次性手套（可徒手）。'],
+ steps:[
+  {t:"评估现场环境安全（口述）",ok:true},
+  {t:"拍打双肩、大声呼喊判断意识，观察胸廓起伏 5-10 秒",ok:true},
+  {t:"立即搬去医院，路上再处理",ok:false,why:"心脏骤停黄金4分钟，必须现场立即CPR！"},
+  {t:"呼救：拨打120，请人取 AED",ok:true},
+  {t:"解开衣扣，按压位置：两乳头连线中点/胸骨下半段",ok:true},
+  {t:"按压深度 3cm 左右，频率 60次/分",ok:false,why:"深度应 5-6cm，频率 100-120次/分"},
+  {t:"开放气道（仰头抬颏），人工呼吸，按压:吹气=30:2",ok:true},
+  {t:"持续 5 组后再次评估，直到 AED/120 到达",ok:true}
+ ]
+},
+{
+ name:"K43-01 灭火器的选择与使用",
+ rule:"K43 评分要点：判断火灾类型 → 正确选择灭火器（电气火灾禁水、禁泡沫）→ 检查压力表 → 提至距火源2-3米 → 拔销、握管、压把 → 对准火焰根部扫射。选错灭火器=安全不合格项。",
+ scene:['🔥 场景：配电箱起火，火势初起，箱内有电。','现场备有：水基泡沫灭火器、二氧化碳灭火器、干粉灭火器、一桶水。'],
+ steps:[
+  {t:"先切断配电箱电源（口述：先断电）",ok:true},
+  {t:"判断火灾类型：带电设备火灾（E类）",ok:true},
+  {t:"选用二氧化碳灭火器（或干粉）",ok:true},
+  {t:"选用泡沫灭火器或用水泼",ok:false,why:"水/泡沫导电，电气火灾严禁使用！选错=安全不合格项计0分"},
+  {t:"检查灭火器压力表指针在绿区",ok:true},
+  {t:"提到距火源 2-3 米处，拔保险销",ok:true},
+  {t:"一手握喷管对准火焰上部，压下压把",ok:false,why:"应对准火焰【根部】扫射，不是上部"},
+  {t:"左右扫射覆盖燃烧面，直至火焰熄灭",ok:true}
+ ]
+}
+];
+
+let cur=0,picks=[];
+function showCase(i,btn){
+  cur=i;picks=[];btn&&(document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on')),btn.classList.add('on'));
+  render();
+}
+function render(){
+  const c=CASES[cur];
+  document.getElementById('rule').textContent='📋 '+c.rule;
+  document.getElementById('scene').innerHTML=c.scene.map(s=>'<div>'+s+'</div>').join('')+'<div class="emoji">'+(cur===0?'⚡':cur===1?'🫀':'🔥')+'</div><div class="say">从下面步骤中点选正确的操作（按顺序思维选），错误的也要认清</div>';
+  const shuffled=c.steps.map((s,i)=>({...s,orig:i})).sort(()=>Math.random()-.5);
+  document.getElementById('steps').innerHTML='';
+  shuffled.forEach(s=>{
+    const d=document.createElement('div');d.className='step';d.innerHTML='<div class="n">?</div><div class="t">'+s.t+'</div><div class="mark"></div>';
+    d.onclick=()=>{
+      if(d.classList.contains('ok')||d.classList.contains('err'))return;
+      const good=s.ok;
+      d.classList.add(good?'ok':'err');
+      d.querySelector('.n').textContent=good?'✓':'✗';
+      d.querySelector('.mark').textContent=good?'':'⚠';
+      if(!good&&!d.dataset.told){alert('❌ '+s.why);d.dataset.told=1;}
+      picks.push({t:s.t,ok:s.ok,why:s.why||''});
+    };
+    document.getElementById('steps').appendChild(d);
+  });
+  document.getElementById('result').className='result';
+}
+function submit(){
+  const c=CASES[cur],r=document.getElementById('result');
+  const wrong=picks.filter(p=>!p.ok).length;
+  const goodSteps=c.steps.filter(s=>s.ok);
+  const doneGood=picks.filter(p=>p.ok).length;
+  const missed=goodSteps.length-doneGood;
+  const score=Math.max(0,100-wrong*20-missed*20);
+  const unsafe=picks.some(p=>!p.ok&&((p.why||'').includes('不合格')||(p.why||'').includes('触电')||(p.why||'').includes('导电')||(p.why||'').includes('4分钟')));
+  r.style.display='block';
+  r.className='scorex result '+(score>=80?'good':'bad');
+  r.className='result '+(score>=80?'good':'bad');
+  let m=`${c.name}<br>得分：<b>${score}</b>/100（80 合格）<br>正确操作 ${doneGood}/${goodSteps.length} · 误操作 ${wrong} 次（每次扣20）· 漏做 ${missed} 步`;
+  if(unsafe)m+='<br>🚨 触发【安全不合格项】：现场实操中直接终止考试计 0 分！';
+  if(score>=80)m+='<br>✅ 处置流程合格。记住：先断电/评环境，再施救。';
+  r.innerHTML=m;
+  r.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function reset(){picks=[];render();}
+showCase(0);
+</script>
+</body>
+</html>

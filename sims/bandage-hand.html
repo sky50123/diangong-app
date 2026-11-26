@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>K44-02 创伤包扎 · 右手背"8"字形包扎</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+         background:#eef1f4; color:#1c222c; display:flex; flex-direction:column; overflow:hidden; }
+  /* ---- 顶栏 ---- */
+  #topbar { flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:9px 12px;
+            background:#2f3742; color:#fff; }
+  #topbar .tt { font-size:14px; font-weight:600; margin-right:auto; }
+  #stepIdx { font-size:12px; background:#465061; border-radius:10px; padding:3px 9px; }
+  #curScore { font-size:13px; font-weight:700; color:#ffd76e; }
+  /* ---- 舞台 ---- */
+  #stage { flex:1 1 auto; position:relative; overflow:hidden; background:#f6f7f9; }
+  #scene { position:absolute; inset:0 0 118px 0; overflow:hidden; }
+  .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+  .layer { position:absolute; transition:opacity .5s, transform .5s; }
+  .layer.show { opacity:1 !important; }
+  .badge { position:absolute; background:#e8f7ee; color:#177a48; border:1px solid #9fd8b7;
+           border-radius:8px; font-size:11px; padding:3px 8px; opacity:0; }
+  .badge.show { opacity:1; }
+  /* S1 现场环境：蹲姿图内三个可点检查点 */
+  #squatFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+  #squatFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* S1 地面：蹲姿图是抠图白底，"地面稳固/撤离通道"原来悬在白底上；补一层柔和地面+鞋底投影 */
+  #squatFloor { position:absolute; left:-14%; right:-14%; top:71%; bottom:-36%; z-index:0;
+                background:linear-gradient(180deg, rgba(212,220,230,0) 0%, rgba(206,215,226,.46) 16%,
+                           rgba(198,208,220,.66) 46%, rgba(190,202,215,.80) 100%);
+                -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,#000 16%,#000 84%,rgba(0,0,0,0) 100%);
+                mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,#000 16%,#000 84%,rgba(0,0,0,0) 100%); }
+  .bootSh { position:absolute; border-radius:50%; z-index:0;
+            background:radial-gradient(ellipse at center, rgba(36,46,58,.36) 0%,
+                       rgba(36,46,58,.17) 46%, rgba(36,46,58,0) 74%); }
+  /* 撤离通道：地面上的绿色指引箭头（透视）+ 国标"安全出口"牌（科目一标识牌素材） */
+  #escArrow { position:absolute; z-index:2; left:17.5%; top:90.4%; width:22.5%; height:7.4%;
+              transform:rotate(-5deg) skewY(3deg); transform-origin:100% 50%;
+              background:linear-gradient(90deg,#3aa573 0%,#2f9a68 55%,#248457 100%);
+              opacity:.88; filter:drop-shadow(0 2px 3px rgba(12,60,36,.20));
+              clip-path:polygon(100% 20%, 40% 20%, 40% 0, 0 50%, 40% 100%, 40% 80%, 100% 80%); }
+  #escSign { position:absolute; z-index:2; left:1.5%; top:79.4%; width:15.5%;
+             transform:rotateX(13deg) rotate(-2deg); transform-origin:50% 100%;
+             filter:drop-shadow(0 4px 7px rgba(20,44,32,.32)) drop-shadow(0 0 1px rgba(255,255,255,.7)); }
+  #escSignSh { position:absolute; z-index:1; left:0.5%; top:93.6%; width:17.4%; height:3.4%;
+               border-radius:50%; background:radial-gradient(ellipse at center, rgba(22,58,40,.30) 0%,
+                          rgba(22,58,40,.14) 50%, rgba(22,58,40,0) 76%); }
+  .envpt.lbtop { flex-direction:column-reverse; }
+  .envpt { position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column;
+           align-items:center; gap:3px; cursor:pointer; z-index:4; }
+  .envpt .d { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.96);
+              border:2px solid #f0a63a; color:#b9760c; font-size:14px; font-weight:800;
+              display:flex; align-items:center; justify-content:center;
+              box-shadow:0 2px 9px rgba(0,0,0,.28); animation:ptPulse 1.6s ease-in-out infinite; }
+  .envpt .lb { background:rgba(255,255,255,.94); border:1px solid #d8dde4; border-radius:6px;
+               padding:2px 6px; font-size:10px; color:#33404f; white-space:nowrap; }
+  .envpt.ok .d { background:#1d9e75; border-color:#1d9e75; color:#fff; animation:none; }
+  .envpt.ok .d::before { content:"✓"; }
+  .envpt.ok .d span { display:none; }
+  .envpt.ok .lb { color:#177a48; border-color:#9fd8b7; background:#e8f7ee; }
+  @keyframes ptPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(240,166,58,.55); } 60%{ box-shadow:0 0 0 10px rgba(240,166,58,0); } }
+  /* S1 手部热区：点环境三点后直接在图上手上点，完成"安慰·征得配合" */
+  .handpt { position:absolute; width:58px; height:58px; border-radius:50%;
+            transform:translate(-50%,-50%); z-index:5; cursor:pointer;
+            border:2px dashed rgba(240,166,58,.75); background:rgba(240,166,58,.10);
+            display:flex; align-items:center; justify-content:center;
+            transition:.3s; }
+  .handpt .handpt-lb { position:absolute; left:calc(100% + 5px); top:50%; transform:translateY(-50%);
+                       background:rgba(255,255,255,.94); border:1px solid #f0c98a; border-radius:6px;
+                       padding:2px 7px; font-size:10px; color:#b9760c; white-space:nowrap; }
+  .handpt.ready { border-color:#f0a63a; background:rgba(240,166,58,.16);
+                  animation:ptPulse 1.6s ease-in-out infinite; }
+  .handpt.ready .handpt-lb { color:#8a5a0c; border-color:#f0a63a; font-weight:700; }
+  .handpt.done { border-color:#1d9e75; background:rgba(29,158,117,.14); animation:none; cursor:default; }
+  .handpt.done .handpt-lb { color:#177a48; border-color:#9fd8b7; background:#e8f7ee; }
+  .handpt.done .handpt-lb::before { content:"✓ "; }
+  /* ---- 图内动作交互点：把"点底部文字按钮"改成直接在图上点 ---- */
+  .actpt { position:absolute; transform:translate(-50%,-50%); width:34px; height:34px; border-radius:50%;
+           background:rgba(255,255,255,.96); border:2px solid #f0a63a; color:#b9760c;
+           box-shadow:0 2px 10px rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center;
+           cursor:pointer; z-index:8; animation:ptPulse 1.6s ease-in-out infinite;
+           transition:width .25s,height .25s,background .25s,border-color .25s,opacity .25s; }
+  .actpt .n { font-size:13px; font-weight:800; line-height:1; }
+  .actpt .lb { position:absolute; top:calc(100% + 3px); left:50%; transform:translateX(-50%);
+               background:rgba(255,255,255,.95); border:1px solid #f0c98a; border-radius:6px;
+               padding:1px 6px; font-size:10px; color:#8a5a0c; white-space:nowrap; font-weight:700;
+               box-shadow:0 1px 4px rgba(0,0,0,.12); }
+  .actpt.lbtop .lb { top:auto; bottom:calc(100% + 3px); }
+  .actpt.lbleft .lb { left:-6px; transform:none; }
+  .actpt.done { background:#1d9e75; border-color:#1d9e75; animation:none; cursor:default;
+                width:26px; height:26px; opacity:.9; pointer-events:none; }
+  .actpt.done .n { color:#fff; font-size:12px; }
+  .actpt.done .lb { color:#177a48; border-color:#9fd8b7; background:#e8f7ee; }
+  .actpt.dim { opacity:.55; }
+  /* 托盘前沿的确认牌（图内确认，不占底部按钮栏） */
+  #trayConfirm { position:absolute; left:50%; top:78%; transform:translate(-50%,-50%);
+                 background:#fff; border:2px solid #1d9e75; color:#177a48; border-radius:999px;
+                 padding:6px 15px; font-size:12px; font-weight:700; white-space:nowrap; cursor:pointer;
+                 z-index:9; box-shadow:0 4px 13px rgba(20,40,30,.28); animation:ptPulse 1.9s ease-in-out infinite; }
+  #trayConfirm b { color:#d1830c; font-weight:800; }
+  #trayConfirm.ready { background:#1d9e75; border-color:#1d9e75; color:#fff; }
+  #trayConfirm.ready b { color:#ffd76e; }
+  #trayConfirm:active { transform:translate(-50%,-50%) scale(.95); }
+  /* ---- 底部动作按钮栏：当全部动作都在图内完成时收起，画面随之变高 ---- */
+  #stage.noacts #acts { display:none; }
+  #stage.noacts #scene { bottom:70px; }
+  #envProgress { position:absolute; left:10px; top:40px; font-size:11px; color:#33404f;
+                 background:rgba(255,255,255,.92); border:1px solid #d8dde4; border-radius:8px; padding:3px 9px; }
+  #envProgress b { color:#d1830c; }
+  #envProgress.done b { color:#177a48; }
+  .mark { position:absolute; width:26px; height:26px; border-radius:50%;
+          background:rgba(229,57,53,.85); border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.35);
+          transform:translate(-50%,-50%) scale(0); transition:transform .4s; }
+  .mark.show { transform:translate(-50%,-50%) scale(1); }
+  .mark.aid { background:rgba(30,136,229,.85); }
+  .cap { position:absolute; font-size:11px; color:#33404f; background:rgba(255,255,255,.92);
+         border:1px solid #c9ced6; border-radius:6px; padding:2px 7px; white-space:nowrap;
+         transform:translate(-50%,0); opacity:0; transition:opacity .4s; }
+  .cap.show { opacity:1; }
+  #tagCard { position:absolute; left:38%; top:12%; width:56%; min-width:104px; max-width:150px;
+             background:#fff8e0; border:1px solid #d9b64a;
+             border-radius:8px; padding:5px 7px; font-size:10.5px; color:#6b5312; line-height:1.45;
+             box-shadow:0 3px 10px rgba(0,0,0,.15); opacity:0; transform:rotate(6deg) scale(.7); transition:.5s; }
+  #tagCard.show { opacity:1; transform:rotate(6deg) scale(1); }
+  #heartLine { position:absolute; left:0; right:0; height:0; border-top:2px dashed #e5537a; opacity:0; transition:.5s; }
+  #heartLine.show { opacity:.9; }
+  #heartLine .hl-label { position:absolute; right:6px; top:-16px; font-size:11px; color:#c2335a; font-weight:600; }
+  #raiseClock { position:absolute; right:10px; top:56px; background:rgba(28,34,44,.9); color:#fff;
+                border-radius:8px; padding:6px 10px; font-size:12px; opacity:0; transition:.5s; }
+  #raiseClock.show { opacity:1; }
+  #raiseClock b { color:#ffd76e; }
+  /* S3/S4/S10 肢体特写：手臂从左边缘伸入，根部落到画面外，避免断臂悬空 */
+  .limbStage { position:absolute; inset:0; overflow:hidden; }
+  .limbPhoto { position:absolute; height:64%; width:auto; top:18%; left:-6%;
+               transform-origin:left center; filter:drop-shadow(0 4px 10px rgba(0,0,0,.10)); }
+  /* S4 上臂止血：整条手臂左移，让近端(肱动脉)进画面，手被推出左侧 */
+  .limbPhoto.upper { left:-52%; }
+  /* S4 手臂等大定位容器：手套/按压点按手臂原图 1152×768 坐标定位，永远贴胳膊 */
+  #limbFrame { position:absolute; }
+  #limbFrame .limbPhoto { position:absolute; inset:0; width:100%; height:100%; top:auto; left:auto; }
+  .glovePress { position:absolute; width:15%; height:auto; opacity:0; transition:opacity .4s, transform .4s;
+                transform:translate(-50%,-50%) rotate(8deg); pointer-events:none; filter:drop-shadow(0 3px 6px rgba(0,0,0,.2)); }
+  .glovePress.show { opacity:1; }
+  .pressSpot { position:absolute; width:18px; height:18px; border-radius:50%; border:3px solid #fff;
+               background:rgba(229,57,53,.9); box-shadow:0 2px 8px rgba(0,0,0,.35);
+               transform:translate(-50%,-50%) scale(0); transition:transform .4s; }
+  .pressSpot.show { transform:translate(-50%,-50%) scale(1); }
+  .pressSpot.aid { background:rgba(30,136,229,.9); }
+  .hLine { position:absolute; left:0; right:0; height:0; border-top:2px dashed #e5537a; opacity:0; transition:.5s; }
+  .hLine.show { opacity:.9; }
+  .hLine .hl-tag { position:absolute; left:8px; top:-17px; font-size:11px; color:#c2335a; font-weight:600;
+                   background:rgba(255,255,255,.85); border-radius:5px; padding:1px 5px; }
+  .hArrow { position:absolute; width:2px; background:#e5537a; opacity:0; transition:.5s; }
+  .hArrow::after { content:""; position:absolute; top:-1px; left:-4px; border-left:5px solid transparent;
+                   border-right:5px solid transparent; border-bottom:8px solid #e5537a; }
+  .hArrow.show { opacity:.9; }
+  .liftTag { position:absolute; font-size:11px; color:#c2335a; font-weight:600; opacity:0; transition:.5s;
+             background:rgba(255,255,255,.9); border:1px solid #f0b8c8; border-radius:6px; padding:2px 7px; }
+  .liftTag.show { opacity:1; }
+  /* 物品选择 —— 医生不锈钢托盘 */
+  #supplyWrap { position:absolute; inset:0; display:none; flex-direction:column; }
+  #supplyWrap.show { display:flex; }
+  #supplyImg { flex:1 1 auto; position:relative; margin:6px 8px; overflow:hidden;
+               background:radial-gradient(ellipse at 50% 30%,#f4f6f8 0%,#e5e9ee 70%,#d9dee5 100%);
+               border-radius:10px; border:1px solid #d8dde4;
+               display:flex; align-items:center; justify-content:center; }
+  /* 不锈钢托盘本体：拉丝金属渐变 + 立体卷边 + 内腔阴影 */
+  #tray { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+          width:92%; height:80%;
+          border-radius:18px;
+          background:
+            linear-gradient(135deg,rgba(255,255,255,.85) 0%,rgba(255,255,255,0) 22%,rgba(0,0,0,.05) 55%,rgba(255,255,255,.5) 78%,rgba(0,0,0,.04) 100%),
+            repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0px,rgba(255,255,255,.10) 1px,rgba(120,132,145,.06) 2px,rgba(120,132,145,.06) 3px),
+            linear-gradient(160deg,#fefefe 0%,#d7dde3 14%,#eef2f5 30%,#c3cad2 50%,#e8edf1 70%,#b9c1ca 88%,#e3e8ed 100%);
+          box-shadow:
+            0 10px 22px rgba(40,52,66,.28),
+            inset 0 2px 2px rgba(255,255,255,.95),
+            inset 0 -3px 5px rgba(70,82,96,.28),
+            inset 3px 0 5px rgba(255,255,255,.5),
+            inset -3px 0 5px rgba(70,82,96,.18);
+          border:2px solid #aeb7c1; }
+  /* 托盘内腔（凹下去的盛放区） */
+  #trayWell { position:absolute; inset:5% 4%; border-radius:11px;
+              background:linear-gradient(155deg,#eef1f4 0%,#dfe4e9 40%,#e9edf1 62%,#d4dae1 100%);
+              box-shadow:inset 0 3px 7px rgba(60,72,86,.22), inset 0 -1px 1px rgba(255,255,255,.8);
+              border:1px solid rgba(150,162,175,.45); }
+  /* 每件器材：在托盘内按百分比定位 */
+  .tool { position:absolute; transform:translate(-50%,-50%); transition:transform .28s cubic-bezier(.2,.8,.3,1), filter .28s;
+          cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .tool img { display:block; width:100%; height:auto; filter:drop-shadow(0 3px 3px rgba(30,40,52,.28)); }
+  .tool.picked { transform:translate(-50%,-50%) scale(1.18) translateY(-10px); z-index:6;
+                 filter:drop-shadow(0 10px 10px rgba(30,40,52,.4)); }
+  .tool.note::after { content:attr(data-note); position:absolute; left:50%; top:-20px; transform:translateX(-50%);
+                      white-space:nowrap; font-size:10px; color:#177a48; background:rgba(232,247,238,.95);
+                      border:1px solid #9fd8b7; border-radius:6px; padding:1px 6px; opacity:0; transition:.25s; }
+  .tool.picked.note::after { opacity:1; }
+  .tool .tick { position:absolute; right:-6px; top:-6px; width:19px; height:19px; border-radius:50%;
+                background:#1d9e75; color:#fff; font-size:12px; line-height:19px; text-align:center;
+                box-shadow:0 1px 4px rgba(0,0,0,.25); opacity:0; transform:scale(.5); transition:.2s; }
+  .tool.picked .tick { opacity:1; transform:scale(1); }
+  .tool.wrong .tick { background:#d43a30; }
+  /* 白手：从画面右上伸进来"拿起"器材，动作结束回位 */
+  #pickHand { position:absolute; left:0; top:0; width:24%; z-index:9; pointer-events:none;
+              transform-origin:74% 18%;
+              opacity:0; transform:translate(40px,-60px) rotate(20deg);
+              filter:drop-shadow(0 6px 8px rgba(30,40,52,.35)); }
+  #pickHand.reach { animation:handReach .85s cubic-bezier(.3,.7,.3,1) forwards; }
+  @keyframes handReach {
+    0%   { opacity:0; transform:translate(40px,-60px) rotate(20deg); }
+    35%  { opacity:1; transform:translate(0,0) rotate(0deg); }
+    62%  { opacity:1; transform:translate(0,0) rotate(0deg); }
+    100% { opacity:0; transform:translate(30px,-46px) rotate(14deg); }
+  }
+  /* 手臂图等大定位容器：交互点按 1152×768 原图坐标定位 */
+  #armFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+              transition:transform .65s cubic-bezier(.3,.7,.3,1); }
+  #armFrame.lifted { transform:translate(-50%,-50%) translateY(-13%) rotate(2.5deg); }
+  #armFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* S5 假人图等大容器：衬垫/止血带按假人原图 318×890 坐标定位，贴在右上臂 */
+  #bodyFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+  #bodyFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* S3 检查视图（假人全身）：与原 #bodyFrame 同规则，按 318×890 比例垂直居中 */
+  #postSupine { position:absolute; inset:0; }
+  #postSupine .bodyBox { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+  #postSupine .bodyBox .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* K44-02 S3 戴手套：场景级独立小卡片（不在假人容器内），靠右不压假人身体 */
+  #gloveTray { position:absolute; right:1.5%; top:35%; width:158px;
+               border:2px dashed #93aec4; border-radius:12px;
+               background:linear-gradient(160deg,#e7eef5,#d7e3ee); box-shadow:0 2px 8px rgba(0,0,0,.12);
+               display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+               padding:16px 6px 9px; transition:border-color .3s, background .3s; }
+  #gloveTray.worn { border-style:solid; border-color:#4a9d6b; background:linear-gradient(160deg,#e3f3e9,#d3ecdd); }
+  #gloveTray.worn #gloveTrayImg { opacity:.42; }
+  #gloveTray.worn .gt-cap { color:#2f7a4f; }
+  #gloveTrayImg { width:120px; height:auto; object-fit:contain;
+                  filter:drop-shadow(0 1.5px 2px rgba(52,74,96,.42)); }
+  #gloveTray .gt-cap { font-size:9px; color:#2f4457; font-weight:700; text-align:center; line-height:1.3; }
+  #gloveTray .actpt { position:absolute; left:50% !important; top:-13px !important; }
+  @media (max-width:520px){
+    #gloveTray { top:31%; right:1%; width:114px; padding:14px 5px 7px; }
+    #gloveTrayImg { width:88px; }
+    #gloveTray .gt-cap { font-size:8px; }
+  }
+  /* K44-02 手背包扎：照片底图容器 + 伤口高亮 + 纱布 + 8字绷带SVG层 */
+  /* K44-02 手背包扎：容器比例锁定为图片 680:605，图片撑满，交互点百分比=图片像素比，跨屏稳定 */
+  #handFrame { position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+               width:82%; aspect-ratio:680/605; height:auto; }
+  /* S3 戴手套：手部特写收窄左移，把右侧空白让给白手套托盘，避免压手 */
+  #handFrame.gloveScene { width:64%; left:40%; }
+  #handFrame .handPhoto { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  /* 已包扎成品实拍图：叠在未包扎手之上，用 clip-path 从上往下逐步显现，模拟绷带一圈圈缠上去 */
+  #handFrame .handBandaged { opacity:1; clip-path:inset(0 0 100% 0); transition:clip-path .55s ease; z-index:2; }
+  /* 整理体位视图：假人全身 + 右手贴包扎好的手 */
+  #postBody { position:absolute; inset:0; }
+  #postFrame { position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+               height:78%; aspect-ratio:318/890; transition:height .45s ease, top .45s ease; }
+  /* 报告卡出现时假人后退缩小，避免被卡片压住头脸（宽屏卡片在右侧，无需缩小） */
+  #postBody.report #postFrame { height:62%; top:58%; }
+  @media (min-width:521px){ #postBody.report #postFrame { height:78%; top:46%; } }
+  #postFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+  #postFrame .postHand { position:absolute; left:0%; top:50%; width:27%; height:auto;
+               filter:drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+  .woundHi { position:absolute; width:15%; height:9%; transform:translate(-50%,-50%);
+             border:2px dashed rgba(196,52,43,.8); border-radius:50%; box-shadow:0 0 0 3px rgba(196,52,43,.12); }
+  .gauzeOnHand { position:absolute; width:20%; height:14%; transform:translate(-50%,-50%) rotate(-6deg); opacity:0;
+             background:
+               repeating-linear-gradient(0deg, rgba(120,115,100,.10) 0 1px, transparent 1px 4px),
+               repeating-linear-gradient(90deg, rgba(120,115,100,.10) 0 1px, transparent 1px 4px),
+               linear-gradient(150deg,#fdfcf8 0%,#f6f3ea 55%,#ece7da 100%);
+             border:none; border-radius:5px;
+             box-shadow:0 3px 9px rgba(0,0,0,.22), inset 0 0 0 1px rgba(206,200,184,.85);
+             transition:opacity .5s; }
+  .gauzeOnHand.show { opacity:.96; }
+  .fig8svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; transition:opacity .45s; }
+  .pressSpot[data-multi] { left:36%; }
+  /* S11 转运：仰卧假人平躺在担架上，整理衣物/固定带/伤情报告三个图内交互点 */
+  #finalPad { position:absolute; border-radius:18px;
+              background:linear-gradient(168deg,#f2f6f9 0%,#e0e8ef 40%,#ebf1f5 62%,#d2dce5 100%);
+              border:2px solid #c3ced8;
+              box-shadow:0 14px 28px rgba(38,50,64,.22),
+                         inset 0 2px 2px rgba(255,255,255,.92),
+                         inset 0 -3px 6px rgba(70,84,98,.16); }
+  #finalPad::before, #finalPad::after { content:""; position:absolute; left:-1.2%; right:-1.2%; height:7px;
+              border-radius:99px; background:linear-gradient(180deg,#eef2f5,#b3bec9 55%,#8e99a5);
+              box-shadow:0 2px 5px rgba(30,40,52,.28); }
+  #finalPad::before { top:-10px; }
+  #finalPad::after  { bottom:-10px; }
+  /* S5 衬垫/止血带：贴着上臂的卷与带（不用透明描边框，避免"浮在衣服上的卡片"） */
+  #bodyFrame .padRoll { border-radius:5px;
+    background:linear-gradient(180deg,#ffffff 0%,#f7f5ee 52%,#dcd7c9 100%);
+    box-shadow:0 1px 3px rgba(20,30,40,.30), inset 0 0 0 1px rgba(186,180,166,.95); }
+  #bodyFrame .tqRoll { border-radius:5px;
+    background:linear-gradient(180deg,#5d92d8 0%,#2a5cae 45%,#18396f 100%);
+    box-shadow:0 1px 3px rgba(10,20,40,.38), inset 0 1px 0 rgba(255,255,255,.38); }
+  #bodyFrame .tqRoll::after { content:""; position:absolute; right:-16%; top:20%; width:24%; height:60%;
+    border-radius:2px; background:linear-gradient(180deg,#d5dee7,#8d9aa8);
+    box-shadow:0 1px 2px rgba(0,0,0,.4); }
+  #finalFrame { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:3; }
+  #finalFrame .photo { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+  #finalFrame .actpt { width:29px; height:29px; }
+  #finalFrame .actpt.done { width:23px; height:23px; }
+  #finalFrame .actpt .n { font-size:12px; }
+  #finalFrame .actpt .lb { font-size:9.5px; padding:1px 5px; }
+  .strap { position:absolute; border-radius:3px; opacity:0; transition:opacity .45s; width:4% !important;
+           background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 3px,rgba(0,0,0,.07) 3px 6px),
+                      linear-gradient(90deg,#1f2b3a,#3d5570 46%,#1a2432);
+           box-shadow:0 1px 4px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.10); }
+  .strap.show { opacity:.97; }
+  /* K44-02 固定体位：横向浅色固定带标签，置于手背图上方空白处，不遮挡伤口与绷带 */
+  .immobBand { position:absolute; left:50%; top:6%; transform:translateX(-50%); opacity:0;
+               padding:4px 12px; border-radius:6px; background:linear-gradient(90deg,#e8eef4,#cfdae4);
+               border:1px solid #9db0c0; color:#3a5568; font-size:11px; font-weight:700; white-space:nowrap;
+               box-shadow:0 1px 4px rgba(0,0,0,.12); transition:opacity .45s; z-index:12; }
+  .immobBand.show { opacity:1; }
+  .strap::before, .strap::after { content:""; position:absolute; left:50%; transform:translateX(-50%);
+                  width:136%; height:4px; border-radius:2px;
+                  background:linear-gradient(180deg,#e2e8ee,#9daab7 60%,#6f7c89);
+                  box-shadow:0 1px 2px rgba(0,0,0,.45); }
+  .strap::before { top:-2px; }
+  .strap::after  { bottom:-2px; }
+  #repNote { position:absolute; right:2%; top:8px; width:36%; background:#fffdf3; border:1px solid #d9c37a;
+             border-radius:9px; padding:6px 8px; font-size:10px; line-height:1.55; color:#5c4a12;
+             box-shadow:0 4px 12px rgba(0,0,0,.16); opacity:0; transform:scale(.88); transition:.4s; z-index:11; }
+  @media (max-width:520px){ #repNote { width:48%; right:2%; top:6px; font-size:9px; } }
+  #repNote.show { opacity:1; transform:scale(1); }
+  #repNote b { color:#8a6d10; font-size:10.5px; }
+  /* 点选只在物品角打一个小对勾，不用大框大底色 */
+  .hot { position:absolute; width:16%; height:30%; border-radius:8px;
+         transform:translate(-50%,-50%); transition:.2s; cursor:pointer; }
+  .hot::after { content:""; position:absolute; right:-7px; top:-7px; width:21px; height:21px;
+                border-radius:50%; background:#1d9e75; color:#fff; font-size:13px; line-height:21px;
+                text-align:center; opacity:0; transform:scale(.6); transition:.18s;
+                box-shadow:0 1px 4px rgba(0,0,0,.22); }
+  .hot.sel::after { content:"✓"; opacity:1; transform:scale(1); }
+  .hot.wrong::after { content:"✗"; background:#d43a30; opacity:1; transform:scale(1); }
+  /* 绷带渐进揭示层：与裸臂同姿态，真正贴合皮肤 */
+  .band-reveal { position:absolute; inset:0; transition:clip-path .55s ease; }
+  /* 口述与提示 */
+  #oral { position:absolute; left:10px; right:10px; bottom:130px; background:rgba(28,34,44,.92); color:#fff;
+          border-radius:10px; padding:8px 12px; font-size:12px; line-height:1.55; }
+  #oral b { color:#ffd76e; display:block; font-size:12px; margin-bottom:2px; }
+  #note { position:absolute; left:10px; top:8px; font-size:11px; color:#5b6675;
+          background:rgba(255,255,255,.9); border:1px solid #d8dde4; border-radius:8px; padding:3px 9px; }
+  /* ---- 底栏 ---- */
+  #bar { flex:0 0 auto; position:absolute; left:0; right:0; bottom:0; background:#fff;
+         border-top:1px solid #d8dde4; padding:8px 10px 10px; display:flex; flex-direction:column; gap:6px; }
+  #acts { display:flex; gap:6px; flex-wrap:wrap; }
+  #acts button { flex:1 1 30%; background:#eef4fb; border:1px solid #9db6d8; color:#1f4e8c;
+                 border-radius:8px; padding:9px 6px; font-size:12px; min-height:38px; }
+  #acts button.done { background:#e8f7ee; border-color:#9fd8b7; color:#177a48; }
+  #acts button.done::before { content:"✓ "; }
+  #navRow { display:flex; gap:6px; }
+  #navRow button { flex:1; border:0; border-radius:8px; padding:11px 0; font-size:14px; font-weight:600; }
+  #nextBtn { background:#1d9e75; color:#fff; }
+  #resetBtn { background:#eef1f4; color:#5b6675; flex:0 0 84px; }
+  #rptBtn  { background:#f0a63a; color:#fff; flex:0 0 84px; }
+  /* ---- toast / 简报 ---- */
+  #toast { position:fixed; left:50%; top:96px; bottom:auto; transform:translateX(-50%) translateY(-8px); background:rgba(28,34,44,.94);
+           color:#fff; padding:9px 16px; border-radius:8px; font-size:13px; max-width:82vw; text-align:center;
+           opacity:0; transition:.3s; pointer-events:none; z-index:60; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  #report { position:fixed; inset:0; background:rgba(15,19,25,.6); z-index:80; display:none;
+            align-items:center; justify-content:center; padding:18px; }
+  #report.show { display:flex; }
+  #repCard { background:#fff; border-radius:14px; width:100%; max-width:360px; max-height:82vh;
+             display:flex; flex-direction:column; overflow:hidden; }
+  #repCard h3 { background:#2f3742; color:#fff; font-size:15px; padding:12px 14px; }
+  #repScore { text-align:center; padding:14px 0 4px; }
+  #repScore b { font-size:40px; color:#1d9e75; }
+  #repScore.bad b { color:#d43a30; }
+  #repScore span { display:block; font-size:12px; color:#5b6675; margin-top:2px; }
+  #repList { flex:1 1 auto; overflow:auto; padding:6px 16px 10px; font-size:12px; color:#33404f; line-height:1.7; }
+  #repList .it { color:#b3261e; }
+  #repList .ok { color:#177a48; }
+  #repClose { margin:0 16px 14px; background:#1d9e75; color:#fff; border:0; border-radius:8px; padding:12px 0; font-size:15px; font-weight:600; }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <span class="tt">K44-02 创伤包扎 · 右手背"8"字形包扎</span>
+  <span id="stepIdx">1/11</span>
+  <span id="curScore">100分</span>
+</div>
+<div id="stage">
+  <div id="scene"></div>
+  <div id="note"></div>
+  <div id="oral"><b id="oralT"></b><span id="oralC"></span></div>
+  <div id="bar">
+    <div id="acts"></div>
+    <div id="navRow">
+      <button id="resetBtn">复位</button>
+      <button id="nextBtn">下一步</button>
+      <button id="rptBtn">简报</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="report">
+  <div id="repCard">
+    <h3>考核简报 · K44-02 右手背"8"字形包扎</h3>
+    <div id="repScore"><b>100</b><span>满分 100 · 扣分明细见下</span></div>
+    <div id="repList"></div>
+    <button id="repClose">完成并复位</button>
+  </div>
+</div>
+<script>(function(){'use strict';var IMG={'arm':'bandage/own-arm.webp','bareArm':'bandage/own-bare-arm.webp','supine':'bandage/k44-02-supine-clean.png','supineBandaged':'bandage/k44-02-supine-bandaged.webp','supineTorso':'bandage/own-supine-torso.webp','glove':'bandage/own-glove.webp','gloveW':'bandage/own-glove-white.webp','glovePair':'bandage/k44-02-gloves-pair.webp','supplies':'bandage/own-supplies-alpha.webp','squat':'bandage/k44-01-squat.webp','pulse':'bandage/own-glove.webp','bandaged':'bandage/own-bandaged-v3.webp','finalSupine':'bandage/final-supine.webp','handBack':'bandage/k44-02-hand-dummy-680.webp','handBandaged':'bandage/k44-02-hand-dummy-bandaged-680.webp'};for(var _0x5dbbec in IMG){(function(_0x3a1320){var _0x191b7d=new Image();_0x191b7d['src']=_0x3a1320;}(IMG[_0x5dbbec]));}var DED={'env_safe':[0x5,'未观察确认周围环境，扣5分'],'squat':[0x2,'未采取蹲姿，扣2分'],'shoulder':[0x2,'未轻拍肩膀，扣2分'],'comfort':[0x2,'未安慰伤者，扣2分'],'check_head':[0x3,'少检查头面部，扣3分'],'check_neck':[0x3,'少检查颈部，扣3分'],'check_body':[0x3,'少检查胸腹部，扣3分'],'check_limbs':[0x3,'少检查四肢，扣3分'],'report':[0x2,'未报告伤情，扣2分'],'sel_gauze':[0x2,'无菌纱布选错或漏选，扣2分'],'sel_bandage':[0x2,'绷带选错或漏选，扣2分'],'sel_cleaner':[0x2,'无菌生理盐水或碘伏选错或漏选，扣2分'],'sel_swab':[0x2,'棉签选错或漏选，扣2分'],'h_pressure':[0xa,'未用指压桡、尺动脉止血的，扣10分'],'h_simul':[0xa,'未同时压迫双侧桡、尺动脉的，扣10分'],'h_clean':[0x8,'未使用无菌生理盐水冲洗或碘伏消毒右手背伤口，扣8分'],'h_dress':[0x8,'纱布未完全覆盖伤口创面，扣8分'],'h_anchor':[0x8,'未从腕部固定，扣8分'],'h_frontturn':[0x8,'绷带未在手前端缠绕一圈，扣8分'],'h_finish':[0xf,'缠绕完毕后未在腕部固定，扣15分']};var SUPPLIES=[{'id':'gauze','name':'无菌纱布\x20×2','need':!![],'img':'gauze','tx':0x14,'ty':0x15,'tw':0x14},{'id':'band','name':'绷带','need':!![],'img':'band','tx':0x32,'ty':0x15,'tw':0x13},{'id':'fluid','name':'生理盐水/碘伏','need':!![],'img':'fluid','tx':0x4f,'ty':0x15,'tw':0x12},{'id':'swab','name':'棉签','need':!![],'img':'swab','tx':0x14,'ty':0x2f,'tw':0x13},{'id':'tissue','name':'纸巾','need':![],'img':'tissue','tx':0x32,'ty':0x2f,'tw':0x14},{'id':'tape','name':'胶带','need':![],'img':'tq','tx':0x4f,'ty':0x2f,'tw':0x12},{'id':'drink','name':'普通饮料','need':![],'img':'fluid','tx':0x23,'ty':0x49,'tw':0x13},{'id':'rag','name':'用过的抹布','need':![],'img':'rag','tx':0x40,'ty':0x49,'tw':0x14}];var STEPS=[{'key':'S1','group':'判断环境','title':'判断环境\x20·\x20现场安全','oral':'先观察四周：确认电源已切断、地面稳固无积水、留出撤离通道，最后口述\x22现场环境安全\x22再开始救护。','scene':'env','note':'判断现场环境是否安全（点图上三个检查点）','acts':[{'id':'env_safe','label':'观察四周\x20·\x20确认环境安全','ded':'env_safe','inScene':!![],'fx':function(R){}}]},{'key':'S2','group':'安慰伤者','title':'安慰伤者\x20·\x20征得配合','oral':'上一步已蹲姿靠近伤者；现在轻拍肩膀，安慰并告知正在救护右手背，请勿随意活动、配合检查。','scene':'supine','note':'蹲姿已在现场评估完成\x20→\x20轻拍肩膀\x20→\x20安慰（点图上两个点）','acts':[{'id':'shoulder','label':'轻拍肩膀','ded':'shoulder','inScene':!![],'fx':function(R){R['show']('touchHand');}},{'id':'comfort','label':'安慰\x20·\x20告知勿活动','ded':'comfort','inScene':!![],'fx':function(R){R['show']('capComfort');}}]},{'key':'S3','group':'戴手套·检查','title':'戴乳胶手套\x20·\x20四处检查','oral':'先在右手背特写画面点右侧托盘戴好白色乳胶手套，随后切到伤者全身，依次用手触碰检查头面部、颈部、胸腹部、四肢，报告有无创伤、异物或骨折。','scene':'hand','note':'①\x20在右手特写上点右侧白色手套托盘戴手套\x20→\x20②\x20自动切到伤者全身，依次检查头面/颈/胸腹/四肢（逐点出现）','acts':[{'id':'glove','label':'戴白色乳胶手套','ded':null,'inScene':!![],'fx':function(R){var _0x1b113f=document['getElementById']('gloveTray');if(_0x1b113f){_0x1b113f['classList']['add']('worn');var _0xbae60e=_0x1b113f['querySelector']('.gt-cap');if(_0xbae60e)_0xbae60e['innerHTML']='✓\x20已戴好<br>开始检查伤者';}toast('白色乳胶手套已戴好\x20·\x20切到伤者全身开始检查');setTimeout(function(){R['switchToSupine']();},0x44c);}},{'id':'check_head','label':'检查头面部','ded':'check_head','inScene':!![],'fx':function(R){R['show']('capHead');}},{'id':'check_neck','label':'检查颈部','ded':'check_neck','inScene':!![],'fx':function(R){R['show']('capNeck');}},{'id':'check_body','label':'检查胸腹部','ded':'check_body','inScene':!![],'fx':function(R){R['show']('capBody');}},{'id':'check_limbs','label':'检查四肢','ded':'check_limbs','inScene':!![],'fx':function(R){R['show']('capLimbs');}}]},{'key':'S4','group':'报告伤情','title':'报告右手背伤情','oral':'检查发现患者右手背开放性创伤，无骨折，现在进行包扎。','scene':'hand','note':'报告伤情后再包扎（点手背上一点）','acts':[{'id':'report','label':'报告右手背创伤\x20·\x20无骨折','ded':'report','inScene':!![],'fx':function(R){R['show']('capReport');}}]},{'key':'S5','group':'选择物品','title':'选择包扎用品','oral':'选取：无菌纱布、绷带、无菌生理盐水或碘伏、棉签。纸巾、胶带、饮料、抹布都不是本题所需。','scene':'supplies','note':'点托盘上的器材\x20·\x20点前沿【确认选择】','supply':!![]},{'key':'S6','group':'止血包扎','title':'右手背\x228\x22字形包扎','oral':'两手拇指和食指同时压迫伤侧右腕桡、尺动脉止血；清洁右手背伤口，无菌纱布覆盖并超出创面周边至少3cm；绷带从腕部环形2圈→斜拉至手背→手前端绕1圈→腕与手前端之间作8字交叉→回腕部固定；最后整理体位、固定并报告转运。','scene':'hand','note':'按图上编号依次操作：①定位桡尺动脉\x20②同时压迫\x20③清洗\x20④覆盖纱布\x20⑤腕部2圈\x20⑥拉至手背\x20⑦手前端1圈\x20⑧8字交叉\x20⑨腕部固定','acts':[{'id':'h_pressure','label':'定位右腕桡、尺动脉','ded':'h_pressure','inScene':!![],'fx':function(R){R['show']('capPressure');}},{'id':'h_simul','label':'两手同时压迫止血','ded':'h_simul','inScene':!![],'fx':function(R){R['h_simul']();}},{'id':'h_clean','label':'清洗\x20/\x20消毒右手背','ded':'h_clean','inScene':!![],'fx':function(R){R['cleanHand']();}},{'id':'h_dress','label':'无菌纱布覆盖创面','ded':'h_dress','inScene':!![],'fx':function(R){R['show']('gauzeHand');R['hide']('woundHand');}},{'id':'h_anchor','label':'腕部环形固定\x202\x20圈','ded':'h_anchor','inScene':!![],'fx':function(R){R['wrapHand'](0x1c);}},{'id':'h_dorsum','label':'绷带斜拉至手背','ded':null,'inScene':!![],'fx':function(R){R['wrapHand'](0x2d);}},{'id':'h_frontturn','label':'手前端缠绕一圈','ded':'h_frontturn','inScene':!![],'fx':function(R){R['wrapHand'](0x3e);}},{'id':'h_eight','label':'腕与手前端间\x208\x20字交叉','ded':null,'inScene':!![],'fx':function(R){R['wrapHand'](0x55);}},{'id':'h_finish','label':'回腕部固定末端','ded':'h_finish','inScene':!![],'fx':function(R){R['wrapHand'](0x64);setTimeout(function(){R['showBandaged']();},0x1a4);setTimeout(function(){R['switchToBody']();},0x5dc);R['finishHand']();}},{'id':'h_tidy','label':'整理衣物与体位','ded':null,'inScene':!![],'fx':function(R){R['show']('capTidy');}},{'id':'h_immob','label':'固定带固定体位','ded':null,'inScene':!![],'fx':function(R){R['show']('strapA');}},{'id':'h_handoff','label':'转运\x20·\x20报告老师','ded':null,'inScene':!![],'fx':function(R){R['hide']('capTidy');R['show']('repNote');R['show']('capGo');R['hide']('strapA');var _0x11454a=document['getElementById']('postBody');if(_0x11454a)_0x11454a['classList']['add']('report');}}]}];var cur=0x0,_0x3e786e=0x64,_0x3677c4=[],_0x3301eb={},_0x482e2a={},_0xd4b80e={};var R={'_reg':{},'show':function(_0x3793fa){var _0x1b4ce3=this['_reg'][_0x3793fa];if(_0x1b4ce3)_0x1b4ce3['classList']['add']('show');},'hide':function(_0xff3c84){var _0x414931=this['_reg'][_0xff3c84];if(_0x414931)_0x414931['classList']['remove']('show');},'showSvg':function(_0x135d90){var _0x55816e=sceneEl['querySelector']('[data-b=\x22'+_0x135d90+'\x22]');if(_0x55816e)_0x55816e['classList']['add']('show');},'wrapRing':function(){this['revealBand'](0x1e);},'wrapSpiral':function(){this['revealBand'](0x4a);},'wrapFix':function(){this['revealBand'](0x64);var _0x4770df=this;setTimeout(function(){_0x4770df['finish']();},0x28a);},'revealBand':function(_0x1c4e21){var _0x5bd93f=this['_reg']['bandReveal'];if(_0x5bd93f)_0x5bd93f['style']['clipPath']='inset(0\x20'+(0x64-_0x1c4e21)+'%\x200\x200)';},'finish':function(){toast('包扎完成\x20·\x20敷料不外露，等待检查血运');},'raiseArm':function(){this['show']('hl');this['show']('hArrow');this['show']('liftTag');this['show']('armMark');this['show']('clock');var _0x58ccfd=document['getElementById']('armFrame');if(_0x58ccfd){_0x58ccfd['classList']['add']('lifted');}},'cleanWound':function(){this['show']('swab');this['show']('capClean');setTimeout(function(){var _0x556c7e=R['_reg']['woundMark'];if(_0x556c7e){_0x556c7e['style']['opacity']=0.25;}},0x258);},'cleanHand':function(){this['show']('capPressure');setTimeout(function(){var _0x3d49de=R['_reg']['woundHand'];if(_0x3d49de){_0x3d49de['style']['opacity']=0.3;}},0x1f4);this['hide']('pressureMarkA');this['hide']('pressureMarkB');},'h_simul':function(){this['show']('pressureMarkA');this['show']('pressureMarkB');},'clipPctFor':function(_0x2c1e22){var _0x375e9e=this['_reg']['handBandaged'];if(!_0x375e9e)return'100';var _0x26336b=_0x375e9e['clientWidth']||0x1,_0xfb7dcb=_0x375e9e['clientHeight']||0x1;var _0x58487f=_0x375e9e['naturalWidth']||0x2a8,_0x1346d2=_0x375e9e['naturalHeight']||0x25d;var _0x66d7bf=Math['min'](_0x26336b/_0x58487f,_0xfb7dcb/_0x1346d2);var _0x44d18d=_0x1346d2*_0x66d7bf,_0x1967c6=(_0xfb7dcb-_0x44d18d)/0x2;var _0x1bdbe3=_0x1967c6+_0x44d18d*(_0x2c1e22/0x64);return Math['max'](0x0,Math['min'](0x64,0x64-_0x1bdbe3/_0xfb7dcb*0x64))['toFixed'](0x2);},'wrapHand':function(_0x2baba1){var _0x1b7c7a=this['_reg']['handBandaged'];if(_0x1b7c7a){_0x1b7c7a['style']['clipPath']='inset(0\x200\x20'+this['clipPctFor'](_0x2baba1)+'%\x200)';}},'showBandaged':function(){var _0x5dda44=this['_reg']['handBandaged'];if(_0x5dda44){_0x5dda44['style']['clipPath']='inset(0\x200\x200%\x200)';}var _0xaa5ed0=this['_reg']['fig8layer'];if(_0xaa5ed0){_0xaa5ed0['style']['opacity']='0';}this['hide']('woundHand');this['hide']('gauzeHand');},'switchToSupine':function(){var _0x3cf853=document['getElementById']('handFrame'),_0x385b44=document['getElementById']('postSupine'),_0x272da4=document['getElementById']('gloveTray');if(!_0x3cf853||!_0x385b44||_0x385b44['style']['display']!=='none')return;_0x3cf853['style']['display']='none';if(_0x272da4)_0x272da4['style']['display']='none';_0x385b44['style']['display']='block';layoutBodyFrame();setupSequential();bindSceneActs();revealNextPoint();},'switchToBody':function(){var _0x5b18b3=document['getElementById']('handFrame'),_0x4286de=document['getElementById']('postBody');if(!_0x5b18b3||!_0x4286de||_0x4286de['style']['display']!=='none')return;_0x5b18b3['style']['display']='none';_0x4286de['style']['display']='block';setupSequential();bindSceneActs();revealNextPoint();},'finishHand':function(){toast('包扎完成\x20·\x20腕部固定，等待整理转运');}};var $=function(_0x20e118){return document['getElementById'](_0x20e118);};var sceneEl=$('scene'),_0x11097d=$('acts'),_0x3ed581=$('note'),_0x483786=$('oralT'),_0x7ccce6=$('oralC');var stepIdxEl=$('stepIdx'),_0x973cb7=$('curScore'),_0x3363b1=$('toast');function toast(_0xa161da){_0x3363b1['textContent']=_0xa161da;_0x3363b1['classList']['add']('show');clearTimeout(toast['_t']);toast['_t']=setTimeout(function(){_0x3363b1['classList']['remove']('show');},0x708);}function refreshScore(){_0x973cb7['textContent']=_0x3e786e+'分';}function dock(_0x1c6f09){var _0x49c0c7=DED[_0x1c6f09];if(!_0x49c0c7)return;_0x3e786e=Math['max'](0x0,_0x3e786e-_0x49c0c7[0x0]);_0x3677c4['push'](_0x49c0c7[0x0]+'分\x20·\x20'+_0x49c0c7[0x1]);refreshScore();}function img(_0x9aeb46,_0x56764f){return'<img\x20class=\x22photo\x20'+(_0x56764f||'')+'\x22\x20src=\x22'+_0x9aeb46+'\x22>';}function buildScene(_0x4b27d2){sceneEl['innerHTML']='';R['_reg']={};var _0x46ecc0='';if(_0x4b27d2['scene']==='env'||_0x4b27d2['scene']==='squat'){var _0x37df82=[{'id':'power','n':'1','lb':'电源已隔离','x':0x10,'y':0x11},{'id':'floor','n':'2','lb':'地面稳固','x':0x30,'y':0x5b},{'id':'route','n':'3','lb':'撤离通道畅通','x':0x1b,'y':90.6}];_0x46ecc0='<div\x20id=\x22squatFrame\x22>'+'<div\x20id=\x22squatFloor\x22></div>'+'<div\x20class=\x22bootSh\x22\x20style=\x22left:49%;top:92%;width:30%;height:8%\x22></div>'+'<div\x20class=\x22bootSh\x22\x20style=\x22left:78%;top:87%;width:24%;height:7%\x22></div>'+img(IMG['squat'])+'<div\x20id=\x22escSignSh\x22></div>'+'<img\x20id=\x22escSign\x22\x20src=\x22bandage/tools/exit-sign.webp\x22\x20alt=\x22\x22>'+'<div\x20id=\x22escArrow\x22></div>'+_0x37df82['map'](function(_0x3aba97){return'<div\x20class=\x22envpt'+(_0x3aba97['id']==='route'?'\x20lbtop':'')+'\x22\x20data-env=\x22'+_0x3aba97['id']+'\x22\x20style=\x22left:'+_0x3aba97['x']+'%;top:'+_0x3aba97['y']+'%\x22>'+'<div\x20class=\x22d\x22><span>'+_0x3aba97['n']+'</span></div><div\x20class=\x22lb\x22>'+_0x3aba97['lb']+'</div></div>';})['join']('')+'<div\x20class=\x22cap\x22\x20style=\x22left:14%;top:70%\x22\x20data-r=\x22capComfort\x22>轻拍安慰\x20·\x20征得配合</div>'+'<div\x20class=\x22mark\x22\x20style=\x22left:11.5%;top:59%\x22\x20data-r=\x22touchHand\x22></div>'+'<div\x20class=\x22handpt\x22\x20data-r=\x22handpt\x22\x20style=\x22left:11.5%;top:59%\x22><span\x20class=\x22handpt-lb\x22>先完成现场检查</span></div>'+'</div>'+'<div\x20id=\x22envProgress\x22\x20data-r=\x22envProgress\x22>现场检查\x20<b>0/3</b></div>';}else if(_0x4b27d2['scene']==='supplies'){sceneEl['innerHTML']='<div\x20id=\x22supplyWrap\x22\x20class=\x22show\x22>'+'<div\x20id=\x22supplyImg\x22><div\x20id=\x22tray\x22><div\x20id=\x22trayWell\x22>'+SUPPLIES['map'](function(_0x4f60de){return'<div\x20class=\x22tool\x20note\x22\x20data-id=\x22'+_0x4f60de['id']+'\x22\x20data-note=\x22'+_0x4f60de['name']+'\x22\x20style=\x22left:'+_0x4f60de['tx']+'%;top:'+_0x4f60de['ty']+'%;width:'+_0x4f60de['tw']+'%\x22>'+'<img\x20src=\x22bandage/tools/'+(_0x4f60de['img']||_0x4f60de['id'])+'.webp\x22\x20alt=\x22\x22><span\x20class=\x22tick\x22>✓</span></div>';})['join']('')+'</div><img\x20id=\x22pickHand\x22\x20src=\x22bandage/'+'own-glove-white.webp'+'\x22\x20alt=\x22\x22></div>'+'<div\x20id=\x22trayConfirm\x22>确认选择\x20<b\x20id=\x22selCnt\x22>0/4</b></div>'+'</div>';var _0x2a85b7=document['getElementById']('trayConfirm');if(_0x2a85b7)_0x2a85b7['addEventListener']('click',judgeSupply);var _0x128b76=sceneEl['querySelectorAll']('.tool');for(var _0x597a0e=0x0;_0x597a0e<_0x128b76['length'];_0x597a0e++){_0x128b76[_0x597a0e]['addEventListener']('click',function(){var _0xe68759=this;var _0xb4bfff=!_0xe68759['classList']['contains']('picked');_0xe68759['classList']['toggle']('picked',_0xb4bfff);_0x3301eb[_0xe68759['dataset']['id']]=_0xb4bfff;if(_0xb4bfff){var _0x53448e=null;SUPPLIES['forEach'](function(_0x866af0){if(_0x866af0['id']===_0xe68759['dataset']['id'])_0x53448e=_0x866af0;});var _0x1362fb=document['getElementById']('pickHand');if(_0x53448e&&_0x1362fb){_0x1362fb['style']['left']=_0x53448e['tx']-0x9+'%';_0x1362fb['style']['top']=_0x53448e['ty']-0x14+'%';_0x1362fb['classList']['remove']('reach');void _0x1362fb['offsetWidth'];_0x1362fb['classList']['add']('reach');}}var _0x4f91a4=0x0,_0xd9dc0c=0x0;SUPPLIES['forEach'](function(_0x511520){if(_0x511520['need']){_0x4f91a4++;if(_0x3301eb[_0x511520['id']])_0xd9dc0c++;}});var _0x178983=document['getElementById']('selCnt');if(_0x178983)_0x178983['textContent']=_0xd9dc0c+'/'+_0x4f91a4;if(_0x2a85b7)_0x2a85b7['classList']['toggle']('ready',_0xd9dc0c>=_0x4f91a4);});}layoutSupply();return;}else if(_0x4b27d2['scene']==='supine'){var _0x4072ba=[{'id':'shoulder','n':'1','lb':'轻拍肩膀','x':0x14,'y':0x1b,'ded':'shoulder'},{'id':'comfort','n':'2','lb':'安慰·勿活动','x':0x3e,'y':0x22,'ded':'comfort'},{'id':'check_head','n':'2','lb':'查头面部','x':0x32,'y':0x9,'ded':'check_head'},{'id':'check_neck','n':'3','lb':'查颈部','x':0x32,'y':0x14,'ded':'check_neck'},{'id':'check_body','n':'4','lb':'查胸腹部','x':0x32,'y':0x2c,'ded':'check_body'},{'id':'check_limbs','n':'5','lb':'查四肢','x':0x32,'y':0x4a,'ded':'check_limbs'}];var _0x2388f5=['shoulder','comfort'];_0x46ecc0='<div\x20id=\x22bodyFrame\x22>'+img(IMG['supine'])+_0x4072ba['filter'](function(_0x348966){return _0x2388f5['indexOf'](_0x348966['id'])>=0x0;})['map'](function(_0x41bdaf){return'<div\x20class=\x22actpt'+(_0x41bdaf['n']%0x2?'\x20lbtop':'')+'\x22\x20data-act=\x22'+_0x41bdaf['id']+'\x22\x20data-ded=\x22'+(_0x41bdaf['ded']||'')+'\x22\x20style=\x22left:'+_0x41bdaf['x']+'%;top:'+_0x41bdaf['y']+'%\x22>'+'<span\x20class=\x22n\x22>'+_0x41bdaf['n']+'</span><span\x20class=\x22lb\x22>点我·'+_0x41bdaf['lb']+'</span></div>';})['join']('')+'<div\x20class=\x22layer\x22\x20data-r=\x22gloveHand\x22\x20style=\x22left:8%;top:52%;width:20%;height:16%;opacity:0\x22>'+'<img\x20src=\x22'+IMG['gloveW']+'\x22\x20style=\x22width:100%;height:100%;object-fit:contain\x22></div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:88%\x22\x20data-r=\x22capComfort\x22>安慰伤者\x20·\x20请勿活动</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:6%\x22\x20data-r=\x22capHead\x22>头面部\x20·\x20无畸形</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:16%\x22\x20data-r=\x22capNeck\x22>颈部\x20·\x20无压痛</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:40%\x22\x20data-r=\x22capBody\x22>胸腹部\x20·\x20无创伤</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:70%\x22\x20data-r=\x22capLimbs\x22>四肢\x20·\x20无骨折</div>'+'</div>';}else if(_0x4b27d2['scene']==='hand'&&_0x4b27d2['key']==='S3'){var _0xb44104=[{'id':'check_head','n':'2','lb':'查头面部','x':0x32,'y':0x9},{'id':'check_neck','n':'3','lb':'查颈部','x':0x32,'y':0x14},{'id':'check_body','n':'4','lb':'查胸腹部','x':0x32,'y':0x2c},{'id':'check_limbs','n':'5','lb':'查四肢','x':0x32,'y':0x4a}];_0x46ecc0='<div\x20id=\x22handFrame\x22\x20class=\x22gloveScene\x22>'+'<img\x20class=\x22handPhoto\x22\x20src=\x22'+IMG['handBack']+'\x22\x20alt=\x22\x22>'+'</div>'+'<div\x20id=\x22gloveTray\x22>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22glove\x22\x20style=\x22left:50%;top:-13px\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20戴乳胶手套</span></div>'+'<img\x20id=\x22gloveTrayImg\x22\x20src=\x22'+IMG['glovePair']+'\x22\x20alt=\x22白色乳胶手套·双手\x22>'+'<div\x20class=\x22gt-cap\x22>白色乳胶手套<br>左手\x20+\x20右手\x20·\x20五指戴好</div>'+'</div>'+'<div\x20id=\x22postSupine\x22\x20style=\x22display:none\x22>'+'<div\x20class=\x22bodyBox\x22>'+img(IMG['supine'])+_0xb44104['map'](function(_0x16af3b,_0x3752dd){return'<div\x20class=\x22actpt'+(_0x3752dd%0x2?'\x20lbtop':'')+'\x22\x20data-act=\x22'+_0x16af3b['id']+'\x22\x20style=\x22left:'+_0x16af3b['x']+'%;top:'+_0x16af3b['y']+'%\x22>'+'<span\x20class=\x22n\x22>'+_0x16af3b['n']+'</span><span\x20class=\x22lb\x22>点我·'+_0x16af3b['lb']+'</span></div>';})['join']('')+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:6%\x22\x20data-r=\x22capHead\x22>头面部\x20·\x20无畸形</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:16%\x22\x20data-r=\x22capNeck\x22>颈部\x20·\x20无压痛</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:40%\x22\x20data-r=\x22capBody\x22>胸腹部\x20·\x20无创伤</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:70%\x22\x20data-r=\x22capLimbs\x22>四肢\x20·\x20无骨折</div>'+'</div>'+'</div>';}else if(_0x4b27d2['scene']==='hand'){var _0x435b75=_0x4b27d2['key']==='S6';var _0x211535=_0x435b75?[{'id':'h_pressure','n':'1','lb':'定位桡尺动脉','x':0x32,'y':0x12},{'id':'h_simul','n':'2','lb':'同时压迫止血','x':0x32,'y':0x8},{'id':'h_clean','n':'3','lb':'清洗消毒手背','x':0x33,'y':0x2a},{'id':'h_dress','n':'4','lb':'无菌纱布覆盖','x':0x33,'y':0x2a},{'id':'h_anchor','n':'5','lb':'腕部环形2圈','x':0x39,'y':0xf},{'id':'h_dorsum','n':'6','lb':'拉至手背','x':0x39,'y':0x24},{'id':'h_frontturn','n':'7','lb':'手前端绕1圈','x':0x32,'y':0x46},{'id':'h_eight','n':'8','lb':'8字交叉包扎','x':0x33,'y':0x30},{'id':'h_finish','n':'9','lb':'腕部固定末端','x':0x39,'y':0x16},{'id':'h_tidy','n':'10','lb':'整理体位','x':0x42,'y':0x34},{'id':'h_immob','n':'11','lb':'固定体位','x':0x19,'y':0x3c},{'id':'h_handoff','n':'12','lb':'转运报告','x':0x4e,'y':0x1a}]:[{'id':'report','n':'1','lb':'报告伤情','x':0x32,'y':0x28}];_0x46ecc0='<div\x20id=\x22handFrame\x22>'+'<img\x20class=\x22handPhoto\x22\x20src=\x22'+IMG['handBack']+'\x22\x20alt=\x22\x22>'+'<img\x20class=\x22handPhoto\x20handBandaged\x22\x20src=\x22'+IMG['handBandaged']+'\x22\x20alt=\x22\x22\x20data-r=\x22handBandaged\x22>'+'<div\x20class=\x22woundHi\x22\x20data-r=\x22woundHand\x22\x20style=\x22left:51%;top:42%\x22></div>'+'<div\x20class=\x22gauzeOnHand\x22\x20data-r=\x22gauzeHand\x22\x20style=\x22left:51%;top:42%\x22></div>'+'<svg\x20class=\x22fig8svg\x22\x20viewBox=\x220\x200\x20100\x20100\x22\x20preserveAspectRatio=\x22none\x22>'+'<defs>'+'<pattern\x20id=\x22gauzeWeave\x22\x20width=\x224\x22\x20height=\x224\x22\x20patternUnits=\x22userSpaceOnUse\x22>'+'<rect\x20width=\x224\x22\x20height=\x224\x22\x20fill=\x22#efe9d6\x22/>'+'<path\x20d=\x22M0\x200H4M0\x202H4M0\x200V4M2\x200V4\x22\x20stroke=\x22#ddd3b8\x22\x20stroke-width=\x220.35\x22\x20opacity=\x220.7\x22/>'+'</pattern>'+'</defs>'+'<g\x20data-r=\x22fig8layer\x22\x20style=\x22opacity:0\x22>'+'<path\x20d=\x22M30\x2024\x20Q50\x2019\x2070\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22#bfb499\x22\x20stroke-width=\x229\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M30\x2024\x20Q50\x2019\x2070\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22url(#gauzeWeave)\x22\x20stroke-width=\x227.5\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M31\x2029\x20Q50\x2024\x2069\x2029\x22\x20fill=\x22none\x22\x20stroke=\x22#bfb499\x22\x20stroke-width=\x228.5\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M31\x2029\x20Q50\x2024\x2069\x2029\x22\x20fill=\x22none\x22\x20stroke=\x22url(#gauzeWeave)\x22\x20stroke-width=\x227\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M66\x2026\x20Q56\x2033\x2047\x2041\x20Q39\x2052\x2035\x2070\x22\x20fill=\x22none\x22\x20stroke=\x22#bfb499\x22\x20stroke-width=\x2210.5\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M66\x2026\x20Q56\x2033\x2047\x2041\x20Q39\x2052\x2035\x2070\x22\x20fill=\x22none\x22\x20stroke=\x22url(#gauzeWeave)\x22\x20stroke-width=\x229\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M34\x2071\x20Q50\x2065\x2066\x2071\x22\x20fill=\x22none\x22\x20stroke=\x22#bfb499\x22\x20stroke-width=\x2210\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M34\x2071\x20Q50\x2065\x2066\x2071\x22\x20fill=\x22none\x22\x20stroke=\x22url(#gauzeWeave)\x22\x20stroke-width=\x228.5\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M65\x2070\x20Q55\x2055\x2047\x2046\x20Q40\x2036\x2034\x2025\x22\x20fill=\x22none\x22\x20stroke=\x22#bfb499\x22\x20stroke-width=\x2210.5\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M65\x2070\x20Q55\x2055\x2047\x2046\x20Q40\x2036\x2034\x2025\x22\x20fill=\x22none\x22\x20stroke=\x22url(#gauzeWeave)\x22\x20stroke-width=\x229\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M32\x2028\x20Q50\x2023\x2068\x2028\x22\x20fill=\x22none\x22\x20stroke=\x22#bfb499\x22\x20stroke-width=\x228\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M32\x2028\x20Q50\x2023\x2068\x2028\x22\x20fill=\x22none\x22\x20stroke=\x22url(#gauzeWeave)\x22\x20stroke-width=\x226.5\x22\x20stroke-linecap=\x22round\x22/>'+'<path\x20d=\x22M30\x2020.5\x20Q50\x2015.5\x2070\x2020.5\x20M31\x2033.5\x20Q50\x2028.5\x2069\x2033.5\x22\x20fill=\x22none\x22\x20stroke=\x22#2b5fa8\x22\x20stroke-width=\x220.9\x22\x20stroke-dasharray=\x221.6\x201.2\x22\x20opacity=\x220.85\x22/>'+'<path\x20d=\x22M61.5\x2026\x20Q52\x2033\x2043\x2042\x20Q35\x2053\x2031\x2070\x22\x20fill=\x22none\x22\x20stroke=\x22#2b5fa8\x22\x20stroke-width=\x220.9\x22\x20stroke-dasharray=\x221.6\x201.2\x22\x20opacity=\x220.85\x22/>'+'<path\x20d=\x22M34\x2066\x20Q50\x2060\x2066\x2066\x22\x20fill=\x22none\x22\x20stroke=\x22#2b5fa8\x22\x20stroke-width=\x220.9\x22\x20stroke-dasharray=\x221.6\x201.2\x22\x20opacity=\x220.85\x22/>'+'<path\x20d=\x22M69\x2070\x20Q60\x2055\x2051\x2046\x20Q44\x2036\x2038\x2025\x22\x20fill=\x22none\x22\x20stroke=\x22#2b5fa8\x22\x20stroke-width=\x220.9\x22\x20stroke-dasharray=\x221.6\x201.2\x22\x20opacity=\x220.85\x22/>'+'</g></svg>'+'<div\x20class=\x22pressSpot\x22\x20style=\x22left:44%;top:19%\x22\x20data-r=\x22pressureMarkA\x22></div>'+'<div\x20class=\x22pressSpot\x20aid\x22\x20style=\x22left:64%;top:19%\x22\x20data-r=\x22pressureMarkB\x22></div>'+_0x211535['slice'](0x0,0x9)['map'](function(_0x3c60b2,_0x52e7d7){var _0x4136b4=_0x3c60b2['n']['length']>0x1?'\x20lbleft':'';return'<div\x20class=\x22actpt'+(_0x52e7d7%0x2?'\x20lbtop':'')+_0x4136b4+'\x22\x20data-act=\x22'+_0x3c60b2['id']+'\x22\x20style=\x22left:'+_0x3c60b2['x']+'%;top:'+_0x3c60b2['y']+'%\x22>'+'<span\x20class=\x22n\x22>'+_0x3c60b2['n']+'</span><span\x20class=\x22lb\x22>点我·'+_0x3c60b2['lb']+'</span></div>';})['join']('')+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:90%\x22\x20data-r=\x22capReport\x22>右手背开放性创伤\x20·\x20无骨折</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:90%\x22\x20data-r=\x22capPressure\x22>右腕桡、尺动脉\x20·\x20双手同时压迫</div>'+'</div>'+'<div\x20id=\x22postBody\x22\x20style=\x22display:none\x22>'+'<div\x20id=\x22postFrame\x22>'+'<img\x20class=\x22photo\x22\x20src=\x22'+IMG['supineBandaged']+'\x22\x20alt=\x22\x22>'+_0x211535['slice'](0x9)['map'](function(_0x476298){return'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22'+_0x476298['id']+'\x22\x20style=\x22left:'+_0x476298['x']+'%;top:'+_0x476298['y']+'%\x22>'+'<span\x20class=\x22n\x22>'+_0x476298['n']+'</span><span\x20class=\x22lb\x22>点我·'+_0x476298['lb']+'</span></div>';})['join']('')+'</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:6%\x22\x20data-r=\x22capTidy\x22>整理衣物\x20·\x20体位自然</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:21%;top:6%\x22\x20data-r=\x22capGo\x22>急救车\x20→\x20医院\x20·\x20已交接</div>'+'</div>'+'<div\x20id=\x22repNote\x22\x20data-r=\x22repNote\x22><b>伤情报告\x20·\x20已交接</b><br>'+'创面：右手背开放伤，已清创覆盖<br>'+'包扎：腕部2圈→手背→手前端1圈→8字→腕部固定<br>'+'止血：桡尺动脉压迫已演示</div>'+'<div\x20class=\x22immobBand\x22\x20data-r=\x22strapA\x22>固定带\x20·\x20体位固定</div>';}else if(_0x4b27d2['scene']==='raise'){_0x46ecc0='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22mark\x22\x20style=\x22left:44.3%;top:49.9%\x22\x20data-r=\x22armMark\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22raise\x22\x20style=\x22left:52%;top:42%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20抬高伤肢</span></div>'+'</div>'+'<div\x20class=\x22hLine\x22\x20style=\x22top:58%\x22\x20data-r=\x22hl\x22><span\x20class=\x22hl-tag\x22>心脏水平线</span></div>'+'<div\x20class=\x22hArrow\x22\x20style=\x22top:40%;height:18%\x22\x20data-r=\x22hArrow\x22></div>'+'<div\x20class=\x22liftTag\x22\x20style=\x22left:63%;top:22%\x22\x20data-r=\x22liftTag\x22>↑\x20创面高于心脏</div>'+'<div\x20id=\x22raiseClock\x22\x20data-r=\x22clock\x22><b>02:00</b>\x20·\x20抬高\x202\x20分钟（示意）</div>';}else if(_0x4b27d2['scene']==='pressure'){_0x46ecc0='<div\x20class=\x22limbStage\x22>'+'<div\x20id=\x22limbFrame\x22>'+'<img\x20class=\x22limbPhoto\x22\x20src=\x22'+IMG['bareArm']+'\x22\x20alt=\x22\x22>'+'<img\x20class=\x22glovePress\x22\x20src=\x22'+IMG['gloveW']+'\x22\x20style=\x22left:47%;top:39%\x22\x20data-r=\x22gPress1\x22\x20alt=\x22\x22>'+'<div\x20class=\x22pressSpot\x22\x20style=\x22left:47%;top:39%\x22\x20data-r=\x22mThumb\x22></div>'+'<div\x20class=\x22pressSpot\x20aid\x22\x20style=\x22left:44%;top:59%\x22\x20data-r=\x22mThumb2\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22p_self\x22\x20style=\x22left:47%;top:39%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20右拇指按压</span></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22p_aid\x22\x20data-need=\x22p_self\x22\x20data-tip=\x22先点①\x20施救者右拇指按压肱动脉\x22\x20style=\x22left:44%;top:59%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>健肢左拇指协助</span></div>'+'</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:50%;top:68%\x22\x20data-r=\x22capThumb\x22>施救者右拇指\x20·\x20肱动脉</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:38%;top:78%\x22\x20data-r=\x22capThumb2\x22>伤者健肢左拇指协助</div>'+'</div>';}else if(_0x4b27d2['scene']==='tourniquet'){_0x46ecc0='<div\x20id=\x22bodyFrame\x22>'+img(IMG['supine'])+'<div\x20class=\x22layer\x20padRoll\x22\x20data-r=\x22padBand\x22\x20style=\x22left:1.5%;top:42%;width:13.6%;height:2.3%;opacity:0\x22></div>'+'<div\x20class=\x22layer\x20tqRoll\x22\x20data-r=\x22tqBand\x22\x20style=\x22opacity:0;left:1.1%;top:51%;width:14.2%;height:2.5%;opacity:0\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22pad\x22\x20style=\x22left:13%;top:43%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20先加衬垫</span></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22tq\x22\x20data-need=\x22pad\x22\x20data-tip=\x22先点①\x20在上\x201/3\x20处加衬垫\x22\x20style=\x22left:13%;top:52%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>再上止血带</span></div>'+'</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:22%;top:56%\x22\x20data-r=\x22capTq\x22>上\x201/3\x20·\x20衬垫\x20→\x20止血带</div>';}else if(_0x4b27d2['scene']==='tag'){_0x46ecc0='<div\x20id=\x22bodyFrame\x22>'+img(IMG['supine'])+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22tag\x22\x20style=\x22left:52%;top:36%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点胸前\x20·\x20挂标牌</span></div>'+'<div\x20id=\x22tagCard\x22\x20data-r=\x22tagCard\x22>部位：右上臂<br>时间：<span\x20id=\x22tagTime\x22></span><br>（胸前易发现处）</div>'+'</div>';}else if(_0x4b27d2['scene']==='clean'){_0x46ecc0='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22mark\x22\x20style=\x22left:44.3%;top:49.9%\x22\x20data-r=\x22woundMark\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22clean\x22\x20style=\x22left:44.3%;top:41%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点创面\x20·\x20冲洗消毒</span></div>'+'<div\x20class=\x22layer\x22\x20data-r=\x22swab\x22\x20style=\x22left:40%;top:45%;width:9%;height:10%;background:#cfe3f7;border:1px\x20solid\x20#8db4dc;border-radius:4px;opacity:0\x22></div>'+'</div><div\x20class=\x22cap\x22\x20style=\x22left:44%;top:68%\x22\x20data-r=\x22capClean\x22>生理盐水冲洗\x20/\x20碘伏消毒</div>';}else if(_0x4b27d2['scene']==='gauze'){_0x46ecc0='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22gauze\x22\x20style=\x22left:44.3%;top:38%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点创面\x20·\x20盖无菌纱布</span></div>'+'<div\x20class=\x22layer\x22\x20data-r=\x22gauzePad\x22\x20style=\x22left:36%;top:40.5%;width:16%;height:19%;background:#fdfdfb;border:2px\x20solid\x20#cfc9bb;border-radius:8px;opacity:0;box-shadow:0\x202px\x206px\x20rgba(0,0,0,.12)\x22></div>'+'</div><div\x20class=\x22cap\x22\x20style=\x22left:44%;top:72%\x22\x20data-r=\x22capGauze\x22>纱布边缘\x20>\x20创面\x203cm</div>';}else if(_0x4b27d2['scene']==='wrap'){_0x46ecc0='<div\x20id=\x22armFrame\x22>'+img(IMG['bareArm'])+'<div\x20class=\x22band-reveal\x22\x20data-r=\x22bandReveal\x22\x20style=\x22clip-path:inset(0\x200\x200\x20100%)\x22>'+'<img\x20class=\x22photo\x22\x20src=\x22'+IMG['bandaged']+'\x22></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22ring\x22\x20style=\x22left:34%;top:44%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>远端环形固定</span></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22spiral\x22\x20data-need=\x22ring\x22\x20data-tip=\x22先点①\x20在远端环形固定\x202~3\x20圈\x22\x20style=\x22left:47%;top:52%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>螺旋反折</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22fixb\x22\x20data-need=\x22spiral\x22\x20data-tip=\x22先点②\x20由远端向近端螺旋反折\x22\x20style=\x22left:60%;top:43%\x22><span\x20class=\x22n\x22>3</span><span\x20class=\x22lb\x22>平绕固定</span></div>'+'</div><div\x20class=\x22cap\x22\x20style=\x22left:50%;top:76%\x22\x20data-r=\x22capWrap\x22>环形固定\x20→\x20螺旋反折\x20→\x20平绕固定</div>';}else if(_0x4b27d2['scene']==='pulse'){_0x46ecc0='<div\x20id=\x22armFrame\x22>'+img(IMG['bandaged'])+'<img\x20class=\x22glovePress\x22\x20src=\x22'+IMG['gloveW']+'\x22\x20style=\x22left:27%;top:46%;transform:translate(-50%,-50%)\x20rotate(-24deg)\x22\x20data-r=\x22pulseInset\x22\x20alt=\x22\x22>'+'<div\x20class=\x22pressSpot\x22\x20style=\x22left:27%;top:46%\x22\x20data-r=\x22pulseDot\x22></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22pulse\x22\x20style=\x22left:27%;top:46%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>点我\x20·\x20摸桡动脉</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x20lbleft\x22\x20data-act=\x22color\x22\x20data-need=\x22pulse\x22\x20data-tip=\x22先点①\x20扪桡动脉搏动\x22\x20style=\x22left:11%;top:37%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>查末梢颜色温度</span></div>'+'</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:30%;top:70%\x22\x20data-r=\x22capPulse\x22>桡动脉\x20·\x20腕部拇指侧\x20·\x20轻压</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:54%;top:73%\x22\x20data-r=\x22capColor\x22>末梢血运：颜色红润\x20·\x20温度正常</div>';}else if(_0x4b27d2['scene']==='final'){_0x46ecc0='<div\x20id=\x22finalPad\x22></div>'+'<div\x20id=\x22finalFrame\x22>'+img(IMG['finalSupine'])+'<div\x20class=\x22strap\x22\x20data-r=\x22strapA\x22\x20style=\x22left:33%;top:13%;width:3.4%;height:76%\x22></div>'+'<div\x20class=\x22strap\x22\x20data-r=\x22strapB\x22\x20style=\x22left:64%;top:19%;width:3.4%;height:68%\x22></div>'+'<div\x20class=\x22actpt\x22\x20data-act=\x22tidy\x22\x20style=\x22left:44%;top:74%\x22><span\x20class=\x22n\x22>1</span><span\x20class=\x22lb\x22>整理衣物</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22strap\x22\x20data-need=\x22tidy\x22\x20data-tip=\x22先点①\x20整理伤者衣物与体位\x22\x20style=\x22left:64%;top:34%\x22><span\x20class=\x22n\x22>2</span><span\x20class=\x22lb\x22>固定带固定体位</span></div>'+'<div\x20class=\x22actpt\x20lbtop\x22\x20data-act=\x22handover\x22\x20data-need=\x22strap\x22\x20data-tip=\x22先点②\x20用固定带固定体位\x22\x20style=\x22left:14%;top:29%\x22><span\x20class=\x22n\x22>3</span><span\x20class=\x22lb\x22>转运\x20·\x20伤情报告</span></div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:26%;top:96%\x22\x20data-r=\x22capTidy\x22>衣物平整\x20·\x20体位自然</div>'+'<div\x20class=\x22cap\x22\x20style=\x22left:78%;top:96%\x22\x20data-r=\x22capGo\x22>急救车\x20→\x20医院\x20·\x20已交接</div>'+'</div>'+'<div\x20id=\x22repNote\x22\x20data-r=\x22repNote\x22><b>伤情报告\x20·\x20已交接</b><br>'+'创面：右前臂开放伤，已加压包扎<br>'+'止血带：右上臂上\x201/3，时间已记录<br>'+'末梢：颜色红润、温度正常</div>';}sceneEl['innerHTML']=_0x46ecc0;var _0xda4d21=sceneEl['querySelectorAll']('[data-r]');for(var _0x21ea4d=0x0;_0x21ea4d<_0xda4d21['length'];_0x21ea4d++){R['_reg'][_0xda4d21[_0x21ea4d]['getAttribute']('data-r')]=_0xda4d21[_0x21ea4d];}if(_0x4b27d2['scene']==='tag'){var _0x3d2413=$('tagTime');if(_0x3d2413)_0x3d2413['textContent']=timeStr();}if(_0x4b27d2['scene']==='clean'){R['show']('woundMark');}if(['clean','gauze','raise','wrap','pulse']['indexOf'](_0x4b27d2['scene'])>=0x0){layoutArmFrame();}if(_0x4b27d2['scene']==='pressure'){layoutLimbFrame();}if(_0x4b27d2['scene']==='tourniquet'||_0x4b27d2['scene']==='tag'||_0x4b27d2['scene']==='supine'||_0x4b27d2['scene']==='hand'&&_0x4b27d2['key']==='S3'){layoutBodyFrame();}if(_0x4b27d2['scene']==='hand'){layoutHandFrame();}if(_0x4b27d2['scene']==='env'||_0x4b27d2['scene']==='squat'){layoutSquatFrame();var _0x269933=sceneEl['querySelector']('.handpt');function _0x2d00fd(){if(!_0x269933)return;_0x269933['classList']['add']('ready');var _0x4f8c4d=_0x269933['querySelector']('.handpt-lb');if(_0x4f8c4d)_0x4f8c4d['textContent']='点我\x20·\x20安慰伤者';}var _0x5f1b19=sceneEl['querySelectorAll']('.envpt');for(var _0x44d851=0x0;_0x44d851<_0x5f1b19['length'];_0x44d851++){_0x5f1b19[_0x44d851]['addEventListener']('click',function(){if(this['classList']['contains']('ok'))return;this['classList']['add']('ok');var _0x559106=sceneEl['querySelectorAll']('.envpt.ok')['length'];var _0x4b01c0=sceneEl['querySelector']('#envProgress');if(_0x4b01c0){_0x4b01c0['querySelector']('b')['textContent']=_0x559106+'/3';if(_0x559106===0x3)_0x4b01c0['classList']['add']('done');}if(_0x559106===0x3){var _0x5092d3=_0x11097d['querySelector']('[data-act=\x22env_safe\x22]');if(_0x5092d3&&!_0x5092d3['classList']['contains']('done')){doAct(STEPS[cur]['acts'][0x0],_0x5092d3);}_0x2d00fd();toast('现场环境安全\x20·\x20三点已确认\x20·\x20点伤者手部安慰');}});}if(_0x269933){_0x269933['addEventListener']('click',function(){if(this['classList']['contains']('done'))return;var _0x496a16=_0x11097d['querySelector']('[data-act=\x22env_safe\x22]');if(!_0x496a16||!_0x496a16['classList']['contains']('done')){toast('请先点图中三个环境检查点，确认现场安全');return;}this['classList']['add']('done');this['classList']['remove']('ready');var _0x554f02=this['querySelector']('.handpt-lb');if(_0x554f02)_0x554f02['textContent']='已安慰\x20·\x20征得配合';var _0x3df836=_0x11097d['querySelector']('[data-act=\x22comfort\x22]');if(_0x3df836&&!_0x3df836['classList']['contains']('done'))doAct(STEPS[cur]['acts'][0x1],_0x3df836);});}}}function layoutSquatFrame(){var _0x192d15=document['getElementById']('scene'),_0x713d8c=document['getElementById']('squatFrame');if(!_0x192d15||!_0x713d8c)return;var _0xc26917=_0x192d15['clientWidth'],_0x553d0a=_0x192d15['clientHeight'];if(!_0xc26917||!_0x553d0a)return;var _0x5b9747=_0x553d0a,_0x42e45d=document['getElementById']('oral');if(_0x42e45d){var _0x37fc5f=_0x192d15['getBoundingClientRect'](),_0x4193bf=_0x42e45d['getBoundingClientRect']();if(_0x4193bf['height']>0x0)_0x5b9747=Math['max'](0xf0,Math['round'](_0x4193bf['top']-_0x37fc5f['top']-0xa));}var _0x2a7518=Math['min'](_0xc26917/0x374,_0x5b9747/0x384);var _0x3c94a9=Math['round'](0x384*_0x2a7518);_0x713d8c['style']['width']=Math['round'](0x374*_0x2a7518)+'px';_0x713d8c['style']['height']=_0x3c94a9+'px';_0x713d8c['style']['top']=Math['round'](Math['min'](_0x553d0a/0x2,_0x5b9747-_0x3c94a9/0x2))+'px';}function timeStr(){var _0x2e6256=new Date();return('0'+_0x2e6256['getHours']())['slice'](-0x2)+':'+('0'+_0x2e6256['getMinutes']())['slice'](-0x2)+':'+('0'+_0x2e6256['getSeconds']())['slice'](-0x2);}function layoutSupply(){var _0x1fcb03=document['getElementById']('supplyImg'),_0xbbe271=document['getElementById']('supplyFrame');if(!_0x1fcb03||!_0xbbe271)return;var _0x449c43=_0x1fcb03['clientWidth'],_0x27279d=_0x1fcb03['clientHeight'];if(!_0x449c43||!_0x27279d)return;var _0x25f346=Math['min'](_0x449c43/0x3c0,_0x27279d/0x280);_0xbbe271['style']['width']=Math['round'](0x3c0*_0x25f346)+'px';_0xbbe271['style']['height']=Math['round'](0x280*_0x25f346)+'px';}function layoutHandFrame(){var _0x3eb58e=document['getElementById']('scene'),_0x2ff79d=document['getElementById']('handFrame');if(!_0x3eb58e||!_0x2ff79d)return;var _0x4b9330=_0x3eb58e['clientWidth'],_0x23cc3d=_0x3eb58e['clientHeight'];if(!_0x4b9330||!_0x23cc3d)return;var _0x49aab4=_0x2ff79d['classList']['contains']('gloveScene');var _0x3f4305=_0x49aab4?_0x4b9330-0x96:_0x4b9330*0.82;var _0x5ca51c=_0x23cc3d*(_0x49aab4?0.62:0.66);var _0x37ff8b=Math['min'](_0x3f4305/0x2a8,_0x5ca51c/0x25d);_0x2ff79d['style']['width']=Math['round'](0x2a8*_0x37ff8b)+'px';_0x2ff79d['style']['height']=Math['round'](0x25d*_0x37ff8b)+'px';_0x2ff79d['style']['left']=Math['round']((_0x49aab4?_0x4b9330*0.045:0x0)+0x2a8*_0x37ff8b/0x2)+'px';_0x2ff79d['style']['top']='41%';}function layoutArmFrame(){var _0x4ba66e=document['getElementById']('scene'),_0xc3ed77=document['getElementById']('armFrame');if(!_0x4ba66e||!_0xc3ed77)return;var _0x288d3f=_0x4ba66e['clientWidth'],_0x465b38=_0x4ba66e['clientHeight'];if(!_0x288d3f||!_0x465b38)return;var _0x56e68f=Math['min'](_0x288d3f/0x480,_0x465b38/0x300);_0xc3ed77['style']['width']=Math['round'](0x480*_0x56e68f)+'px';_0xc3ed77['style']['height']=Math['round'](0x300*_0x56e68f)+'px';}function layoutLimbFrame(){var _0x302aff=document['getElementById']('scene'),_0x29e535=document['getElementById']('limbFrame');if(!_0x302aff||!_0x29e535)return;var _0x5e2374=_0x302aff['clientWidth'],_0x444b48=_0x302aff['clientHeight'];if(!_0x5e2374||!_0x444b48)return;var _0x9b0bd3=_0x444b48*0.64,_0x49ac98=_0x9b0bd3*0x480/0x300;_0x29e535['style']['width']=Math['round'](_0x49ac98)+'px';_0x29e535['style']['height']=Math['round'](_0x9b0bd3)+'px';_0x29e535['style']['left']=Math['round'](_0x5e2374*0.02)+'px';_0x29e535['style']['top']=Math['round'](_0x444b48*0.46-_0x9b0bd3*0.5)+'px';}function layoutBodyFrame(){var _0x26c365=document['getElementById']('scene');if(!_0x26c365)return;var _0x3134ad=[document['getElementById']('bodyFrame'),document['querySelector']('#postSupine\x20.bodyBox')];var _0x12f754=_0x26c365['clientWidth'],_0x5ee7ab=_0x26c365['clientHeight'];if(!_0x12f754||!_0x5ee7ab)return;var _0x586b8e=Math['min'](_0x12f754/0x13e,_0x5ee7ab/0x37a);for(var _0x187442=0x0;_0x187442<_0x3134ad['length'];_0x187442++){var _0x44fc5a=_0x3134ad[_0x187442];if(!_0x44fc5a)continue;_0x44fc5a['style']['width']=Math['round'](0x13e*_0x586b8e)+'px';_0x44fc5a['style']['height']=Math['round'](0x37a*_0x586b8e)+'px';}}function layoutFinalFrame(){var _0x435a67=document['getElementById']('scene'),_0x355fe7=document['getElementById']('finalFrame'),_0x4f43b1=document['getElementById']('finalPad');if(!_0x435a67||!_0x355fe7)return;var _0x2ce306=_0x435a67['clientWidth'],_0x383890=_0x435a67['clientHeight'];if(!_0x2ce306||!_0x383890)return;var _0x1132ac=Math['min'](_0x2ce306*0.9/0x37a,_0x383890*0.6/0x13e);var _0x427d12=Math['round'](0x37a*_0x1132ac),_0xba6887=Math['round'](0x13e*_0x1132ac);_0x355fe7['style']['width']=_0x427d12+'px';_0x355fe7['style']['height']=_0xba6887+'px';if(_0x4f43b1){var _0x35f9ae=Math['round'](_0x427d12*1.1),_0x15506e=Math['round'](_0xba6887*1.78);_0x4f43b1['style']['width']=_0x35f9ae+'px';_0x4f43b1['style']['height']=_0x15506e+'px';_0x4f43b1['style']['left']=Math['round']((_0x2ce306-_0x35f9ae)/0x2)+'px';_0x4f43b1['style']['top']=Math['round']((_0x383890-_0x15506e)/0x2)+'px';}}window['addEventListener']('resize',function(){relayoutFrames();});function bandRect(_0x4d8603,_0x4e62fa,_0x3d099e){return'<rect\x20class=\x22band\x22\x20data-b=\x22'+_0x3d099e+'\x22\x20x=\x22'+(_0x4d8603-_0x4e62fa/0x2)+'\x22\x20y=\x22300\x22\x20width=\x22'+_0x4e62fa+'\x22\x20height=\x22176\x22\x20rx=\x2218\x22\x20fill=\x22#f5f1e6\x22\x20stroke=\x22#d8d2c2\x22\x20stroke-width=\x223\x22/>';}function ringBands(){return bandRect(0x249,0x26,'r1')+bandRect(0x228,0x26,'r2')+bandRect(0x207,0x26,'r3');}function spiralBands(){var _0x4db03d='',_0x4c17df=0x1e5;for(var _0x5f408b=0x0;_0x5f408b<0x6;_0x5f408b++){_0x4db03d+='<g\x20class=\x22band\x22\x20data-b=\x22s'+_0x5f408b+'\x22>'+(_0x5f408b===0x0?'<rect\x20x=\x22112\x22\x20y=\x22302\x22\x20width=\x22486\x22\x20height=\x22172\x22\x20fill=\x22#f5f1e6\x22/>':'')+'<path\x20d=\x22M\x20'+_0x4c17df+'\x20313\x20L\x20'+(_0x4c17df-0x2a)+'\x20463\x20L\x20'+(_0x4c17df-0x5c)+'\x20463\x20L\x20'+(_0x4c17df-0x2d)+'\x20313\x20Z\x22\x20fill=\x22#f5f1e6\x22\x20stroke=\x22#d8d2c2\x22\x20stroke-width=\x223\x22/>'+'<path\x20d=\x22M\x20'+(_0x4c17df-0x2a)+'\x20463\x20l\x2015\x2012\x20l\x2013\x20-12\x22\x20fill=\x22none\x22\x20stroke=\x22#b9b0a0\x22\x20stroke-width=\x224\x22/>'+'</g>';_0x4c17df-=0x44;}return _0x4db03d;}function fixBand(){return bandRect(0x6c,0x2c,'f1');}function renderStep(){var _0x1a0f82=STEPS[cur];stepIdxEl['textContent']=cur+0x1+'/'+STEPS['length'];_0x483786['textContent']='第'+(cur+0x1)+'步\x20·\x20'+_0x1a0f82['group'];_0x7ccce6['textContent']=_0x1a0f82['oral'];_0x3ed581['textContent']=_0x1a0f82['note']||'';_0x3301eb={};_0x482e2a={};buildScene(_0x1a0f82);setupSequential();_0x11097d['innerHTML']='';if(_0x1a0f82['supply']){}else{_0x1a0f82['acts']['forEach'](function(_0x67c350){var _0x838dec=document['createElement']('button');_0x838dec['textContent']=_0x67c350['label'];_0x838dec['setAttribute']('data-act',_0x67c350['id']);if(_0x67c350['inScene'])_0x838dec['style']['display']='none';_0x838dec['addEventListener']('click',function(){doAct(_0x67c350,_0x838dec);});_0x11097d['appendChild'](_0x838dec);});}var _0xb48469=0x0;if(_0x1a0f82['acts'])_0x1a0f82['acts']['forEach'](function(_0x491fec){if(!_0x491fec['inScene'])_0xb48469++;});var _0x1aebe5=document['getElementById']('stage');if(_0x1aebe5)_0x1aebe5['classList']['toggle']('noacts',_0xb48469===0x0);bindSceneActs();requestAnimationFrame(relayoutFrames);}function findAct(_0xfe4685){var _0x1e0e93=null;(STEPS[cur]['acts']||[])['forEach'](function(_0x1ac566){if(_0x1ac566['id']===_0xfe4685)_0x1e0e93=_0x1ac566;});return _0x1e0e93;}var seqEls=[],_0x95f251=0x0;function setupSequential(){seqEls=[];_0x95f251=0x0;var _0x81b92=sceneEl['querySelectorAll']('.actpt');if(_0x81b92['length']>0x3){for(var _0x3706ed=0x0;_0x3706ed<_0x81b92['length'];_0x3706ed++){_0x81b92[_0x3706ed]['classList']['add']('seqpt');if(_0x3706ed>0x0)_0x81b92[_0x3706ed]['style']['display']='none';}seqEls=Array['prototype']['slice']['call'](_0x81b92);}}function revealNextPoint(){if(!seqEls['length'])return;var _0x3e23e7=![];for(var _0x48b99c=0x0;_0x48b99c<seqEls['length'];_0x48b99c++){var _0x5b843a=seqEls[_0x48b99c];if(!_0x3e23e7&&!_0x5b843a['classList']['contains']('done')){_0x5b843a['style']['display']='';_0x95f251=_0x48b99c;_0x3e23e7=!![];}else{_0x5b843a['style']['display']='none';}}}function bindSceneActs(){var _0x4778bd=sceneEl['querySelectorAll']('.actpt');for(var _0x16d31a=0x0;_0x16d31a<_0x4778bd['length'];_0x16d31a++){if(_0x4778bd[_0x16d31a]['getAttribute']('data-bound'))continue;_0x4778bd[_0x16d31a]['setAttribute']('data-bound','1');_0x4778bd[_0x16d31a]['addEventListener']('click',function(){var _0x2a5ff5=this['getAttribute']('data-act');var _0x514d0d=_0x11097d['querySelector']('[data-act=\x22'+_0x2a5ff5+'\x22]');if(!_0x514d0d||_0x514d0d['classList']['contains']('done'))return;var _0x24cefa=this['getAttribute']('data-need');if(_0x24cefa){var _0x2ab5ea=!![];_0x24cefa['split'](',')['forEach'](function(_0x270a8f){if(!_0xd4b80e[cur+':'+_0x270a8f]){_0x2ab5ea=![];}});if(!_0x2ab5ea){toast(this['getAttribute']('data-tip')||'请先完成上一步动作');return;}}this['classList']['add']('done');var _0x1ee603=this['querySelector']('.n');if(_0x1ee603)_0x1ee603['textContent']='✓';var _0x26f309=findAct(_0x2a5ff5);if(_0x26f309)doAct(_0x26f309,_0x514d0d);});}}function relayoutFrames(){layoutSupply();layoutArmFrame();layoutLimbFrame();layoutBodyFrame();layoutSquatFrame();layoutFinalFrame();layoutHandFrame();}var autoT=null;function doAct(_0x18bdb2,_0x356234){if(_0x356234['classList']['contains']('done'))return;_0x356234['classList']['add']('done');_0xd4b80e[cur+':'+_0x18bdb2['id']]=!![];try{_0x18bdb2['fx']&&_0x18bdb2['fx'](R);}catch(_0x1e2119){}revealNextPoint();var _0x2ae7fe=STEPS[cur];var _0x2c18f6=_0x2ae7fe['acts']['every'](function(_0x11ef02){return _0xd4b80e[cur+':'+_0x11ef02['id']];});if(_0x2c18f6){clearTimeout(autoT);autoT=setTimeout(nextStep(!![]),0x5dc);}}function nextStep(_0x317d12){return function(){if(autoT){clearTimeout(autoT);autoT=null;}var _0x259167=STEPS[cur];if(!_0x259167['supply']){_0x259167['acts']['forEach'](function(_0xc5fd2e){if(!_0xd4b80e[cur+':'+_0xc5fd2e['id']]&&_0xc5fd2e['ded']){dock(_0xc5fd2e['ded']);}});}if(cur<STEPS['length']-0x1){cur++;renderStep();if(!_0x317d12)toast('进入第\x20'+(cur+0x1)+'\x20步');}else{openReport();}};}function judgeSupply(){var _0x56c5ec={'gauze':'sel_gauze','band':'sel_bandage','fluid':'sel_cleaner','swab':'sel_swab'};var _0x2af02f={'tissue':'sel_gauze','tape':'sel_bandage','drink':'sel_cleaner','rag':'sel_swab'};var _0x12dc77=[];SUPPLIES['forEach'](function(_0x60e2c4){if(_0x60e2c4['need']&&!_0x3301eb[_0x60e2c4['id']]){dock(_0x56c5ec[_0x60e2c4['id']]);_0x12dc77['push'](_0x60e2c4['name']);}if(_0x2af02f[_0x60e2c4['id']]&&_0x3301eb[_0x60e2c4['id']]){dock(_0x2af02f[_0x60e2c4['id']]);}});if(_0x12dc77['length']===0x0){toast('物品齐全\x20·\x20纱布大于创面');}nextStep(![])();}function openReport(){var _0xb975cf=$('report'),_0x3d8109=$('repList'),_0x3c7676=$('repScore');_0x3c7676['querySelector']('b')['textContent']=_0x3e786e;_0x3c7676['className']=_0x3e786e>=0x50?'':'bad';_0x3c7676['querySelector']('span')['textContent']=_0x3e786e>=0x50?'满分\x20100\x20·\x20合格（≥80）·\x20扣分明细见下':'满分\x20100\x20·\x20不合格（<80）·\x20扣分明细见下';var _0x40a499='';if(_0x3677c4['length']===0x0){_0x40a499='<div\x20class=\x22ok\x22>✓\x20全部关键动作完成，无扣分项。</div>';}else{_0x40a499='<div>扣分\x20'+_0x3677c4['length']+'\x20项：</div>';_0x3677c4['forEach'](function(_0x388d37){_0x40a499+='<div\x20class=\x22it\x22>•\x20'+_0x388d37+'</div>';});}_0x40a499+='<div\x20style=\x22margin-top:8px;color:#5b6675\x22>考核口径：K44-02\x20右手背创伤\x228\x22字形包扎（21\x20项扣分\x20/\x20满分\x20100\x20/\x20及格\x2080）</div>';_0x3d8109['innerHTML']=_0x40a499;_0xb975cf['classList']['add']('show');}$('repClose')['addEventListener']('click',function(){$('report')['classList']['remove']('show');resetAll();});function resetAll(){cur=0x0;_0x3e786e=0x64;_0x3677c4=[];_0xd4b80e={};_0x3301eb={};_0x482e2a={};refreshScore();renderStep();toast('已复位\x20·\x20从第\x201\x20步重新开始');}$('resetBtn')['addEventListener']('click',resetAll);$('nextBtn')['addEventListener']('click',nextStep(![]));$('rptBtn')['addEventListener']('click',openReport);renderStep();refreshScore();}());</script>
+</body>
+</html>
