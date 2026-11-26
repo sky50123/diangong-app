@@ -1290,5 +1290,67 @@ img{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user
 </script>
 <!-- DCGEAR_END -->
 
+# -*- coding: utf-8 -*-
+"""
+Canvas 显示修复补丁。
+问题：k11 bench 的 canvas 在 #scrBench 由 hidden 变可见的瞬间，页面自身的绘制
+逻辑可能因 rect=0 而跳过，导致台面只画了极少内容（或完全空）。
+修复：
+1) MutationObserver 监听 #scrBench class 变化 → 可见后延迟触发 resize 事件
+2) 兜底：若 canvas.width 仍是默认 300，则按 CSS 尺寸重设并 dispatch resize
+3) 持续 3 次（100/400/1000ms）触发，确保布局稳定后重绘
+"""
+PATCH = r"""
+<script>
+/* __CANVAS_NUDGE__ */
+(function(){
+  'use strict';
+  var tried = 0;
+  function nudge(tag){
+    try{
+      var cv = document.getElementById('bench');
+      var scr = document.getElementById('scrBench');
+      if(!cv || !scr) return;
+      var vis = scr.offsetParent !== null && scr.getBoundingClientRect().width > 0;
+      if(!vis) return;
+      var r = cv.getBoundingClientRect();
+      // 若 canvas 属性尺寸仍是默认 300x150 且已有 CSS 尺寸，则同步属性尺寸
+      if (cv.width === 300 && cv.height === 150 && r.width > 0) {
+        cv.width = Math.round(r.width);
+        cv.height = Math.round(r.height);
+      }
+      // 触发页面自己的 resize/重绘逻辑
+      window.dispatchEvent(new Event('resize'));
+      if (window.MM && typeof window.MM.redrawWires === 'function') {
+        try { window.MM.redrawWires(); } catch(e){}
+      }
+      tried++;
+    }catch(e){}
+  }
+  function burst(tag){
+    [60, 200, 500, 900, 1500].forEach(function(d){
+      setTimeout(function(){ nudge(tag); }, d);
+    });
+  }
+  window.addEventListener('load', function(){
+    var scr = document.getElementById('scrBench');
+    if(!scr) return;
+    // 初次 & class 变化时触发
+    new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        if (m.attributeName === 'class') burst('cls');
+      });
+    }).observe(scr, {attributes:true, attributeFilter:['class']});
+    // 兜底：定期检查（若页面用别的机制切显隐）
+    var lastVis = false;
+    setInterval(function(){
+      var vis = scr.offsetParent !== null;
+      if (vis && !lastVis) burst('poll');
+      lastVis = vis;
+    }, 800);
+  });
+})();
+</script>
+"""
 </body>
 </html>
