@@ -866,77 +866,71 @@ img{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user
   window.__mmAuxTick=tick;
 })();
 </script>
-# -*- coding: utf-8 -*-
-
 
 <script>
-/* __CANVAS_NUDGE_V2__ : 修复 canvas 尺寸与绘制坐标系不匹配（1455x1032） */
+/* __BACKBTN__ : iframe 内的返回按钮，向父页面 postMessage */
 (function(){
   'use strict';
-  var W = 1455, H = 1032;          /* 台面绘制坐标系（由坐标数据实测得出） */
-  var styled = false;
-
-  function ensureStyle(){
-    if (styled) return;
-    var st = document.createElement('style');
-    st.id = '__benchSizeFix__';
-    /* canvas 按坐标系比例显示：宽度撑满、高度自适应，点击坐标由页面自身换算 */
-    st.textContent = '#bench{width:100%!important;height:auto!important;display:block;}';
-    document.head.appendChild(st);
-    styled = true;
+  if (window.top === window.self) return;   /* 不在 iframe 里就不显示 */
+  function install(){
+    if (document.getElementById('__backFab')) return;
+    var b = document.createElement('button');
+    b.id = '__backFab';
+    b.textContent = '‹ 返回';
+    b.style.cssText = [
+      'position:fixed','left:8px','top:8px','z-index:2147483000',
+      'background:rgba(24,95,165,.92)','color:#fff','border:none','border-radius:16px',
+      'padding:7px 13px','font-size:13px','font-family:inherit','line-height:1.3',
+      'box-shadow:0 2px 10px rgba(0,0,0,.28)','cursor:pointer','-webkit-tap-highlight-color:transparent'
+    ].join(';');
+    b.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      try { parent.postMessage({ __dshBack: true }, '*'); } catch(err){}
+    });
+    document.body.appendChild(b);
   }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install);
+  } else {
+    install();
+  }
+  /* 有些页面会重绘 body，兜住 */
+  setTimeout(install, 1200);
+})();
+</script>
 
-  function fix(tag){
+<script>
+/* __CANVAS_FIX_V3__ : canvas 尺寸对齐绘制坐标系（轻量版） */
+(function(){
+  'use strict';
+  var W = 1455, H = 1032;
+  var applied = false;
+  function fix(){
+    if (applied) return;
     try{
       var cv = document.getElementById('bench');
-      var scr = document.getElementById('scrBench');
-      if(!cv || !scr) return;
-      ensureStyle();
-      /* 只要 canvas 还不是坐标系尺寸，就设成坐标系尺寸 */
-      if (cv.width !== W || cv.height !== H) {
-        cv.width = W;
-        cv.height = H;
+      if(!cv) return;
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      var st = document.getElementById('__benchSizeFix__');
+      if (!st) {
+        st = document.createElement('style');
+        st.id = '__benchSizeFix__';
+        st.textContent = '#bench{width:100%!important;height:auto!important;display:block;}';
+        document.head.appendChild(st);
       }
-      /* 通知页面重绘 */
       window.dispatchEvent(new Event('resize'));
-      if (window.MM && typeof window.MM.redrawWires === 'function') {
-        try { window.MM.redrawWires(); } catch(e){}
-      }
+      applied = true;
     }catch(e){}
   }
-
-  function burst(tag){
-    [0, 80, 250, 600, 1200, 2200].forEach(function(d){
-      setTimeout(function(){ fix(tag); }, d);
-    });
-  }
-
   window.addEventListener('load', function(){
+    fix();
     var scr = document.getElementById('scrBench');
-    if(!scr){
-      /* 没有 scrBench 的页面直接修 canvas */
-      burst('noload');
-      return;
-    }
-    fix('init');
-    new MutationObserver(function(muts){
-      muts.forEach(function(m){
-        if (m.attributeName === 'class') burst('cls');
+    if (scr) {
+      var mo = new MutationObserver(function(){
+        if (scr.offsetParent !== null) { applied = false; fix(); mo.disconnect(); }
       });
-    }).observe(scr, {attributes:true, attributeFilter:['class']});
-
-    var lastVis = false;
-    setInterval(function(){
-      var vis = scr.offsetParent !== null;
-      if (vis !== lastVis) { burst('poll'); lastVis = vis; }
-    }, 700);
-
-    /* canvas 自身属性被页面改回 300 时也兜住 */
-    var cv = document.getElementById('bench');
-    if (cv) {
-      new MutationObserver(function(){
-        if (cv.width !== W) fix('attr');
-      }).observe(cv, {attributes:true, attributeFilter:['width','height']});
+      mo.observe(scr, {attributes:true, attributeFilter:['class']});
+      setTimeout(function(){ mo.disconnect(); }, 60000);
     }
   });
 })();
