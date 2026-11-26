@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>低压实操 · 随时练</title>
+<style>
+:root{--c1:#4f7df9;--c2:#8b5cf6;--ok:#22c55e;--warn:#f59e0b;--bg:#eef1f6;--card:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#222;padding-bottom:70px;}
+/* header */
+.hd{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;padding:18px 20px;text-align:center;font-size:18px;font-weight:600;}
+/* home */
+.banner{margin:16px;padding:28px 16px;border-radius:16px;background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;text-align:center;}
+.banner h1{font-size:24px;margin-bottom:8px;}
+.banner p{opacity:.9;font-size:14px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 16px;}
+.tile{background:var(--card);border-radius:14px;padding:20px 12px;text-align:center;cursor:pointer;transition:.15s;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.tile:active{transform:scale(.97);}
+.tile .icon{width:56px;height:56px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:26px;}
+.tile h3{font-size:16px;margin-bottom:6px;}
+.tile .cnt{font-size:12px;color:#888;background:#f0faf2;display:inline-block;padding:4px 12px;border-radius:8px;}
+.tools{background:var(--card);border-radius:14px;margin:16px;padding:8px;display:flex;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.tools div{flex:1;text-align:center;padding:12px 0;cursor:pointer;font-size:14px;}
+.tools div:active{opacity:.6;}
+/* question view */
+.qv{display:none;}
+.qhead{background:var(--card);padding:16px;margin:16px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.tag{display:inline-block;font-size:11px;color:#fff;background:var(--c1);border-radius:6px;padding:2px 8px;margin-bottom:8px;}
+.qhead h2{font-size:16px;line-height:1.5;}
+.meta{margin-top:8px;font-size:12px;color:#888;display:flex;gap:14px;flex-wrap:wrap;}
+.qbody{margin:0 16px 16px;background:var(--card);border-radius:14px;padding:16px;font-size:14px;line-height:1.9;white-space:pre-wrap;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.qbody img{max-width:100%;border-radius:8px;margin:8px 0;display:block;border:1px solid #eee;}
+/* table rendering inside content */
+.tbl{font-size:12px;overflow-x:auto;margin:12px 0;}
+.tbl table{border-collapse:collapse;width:100%;white-space:normal;}
+.tbl td,.tbl th{border:1px solid #ddd;padding:6px 8px;line-height:1.6;text-align:left;vertical-align:top;}
+.tbl th{background:#f5f7fa;}
+/* list view */
+.lv{margin:16px;}
+.lv-item{background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.lv-item:active{opacity:.7;}
+.lv-item .num{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.lv-item.done .num{background:var(--ok);}
+.lv-item .ti{font-size:13px;line-height:1.5;}
+.lv-item .cd{font-size:11px;color:#999;margin-top:2px;}
+/* bottom nav */
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #eee;z-index:10;}
+.nav div{flex:1;text-align:center;padding:10px 0 12px;font-size:12px;cursor:pointer;color:#999;}
+.nav div.on{color:var(--c1);font-weight:600;}
+.nav div span{display:block;font-size:20px;}
+/* progress bar */
+.pgw{height:4px;background:#e5e7eb;border-radius:2px;margin:14px 16px 0;overflow:hidden;}
+.pg{height:100%;background:linear-gradient(90deg,var(--c1),var(--c2));width:0;transition:.3s;}
+.pgt{font-size:11px;color:#999;text-align:right;margin:4px 16px 0;}
+</style>
+</head>
+<body>
+
+<div id="page-home">
+  <div class="hd">低压实操 · 随时练</div>
+  <div class="banner">
+    <h1>低压电工实操学习系统</h1>
+    <p>2026年版 · 理论评分标准全覆盖</p>
+  </div>
+  <div class="grid">
+    <div class="tile" onclick="openList('低压实操')">
+      <div class="icon" style="background:#f97316;">⚡</div>
+      <h3 style="color:#f97316;">低压实操</h3>
+      <div class="cnt" id="cnt-1"></div>
+    </div>
+    <div class="tile" onclick="openList('应急处置')">
+      <div class="icon" style="background:#ef4444;">🔥</div>
+      <h3 style="color:#ef4444;">应急处置</h3>
+      <div class="cnt" id="cnt-2"></div>
+    </div>
+    <div class="tile" onclick="location='sim_wiring.html'">
+      <div class="icon" style="background:#0ea5e9;">🔌</div>
+      <h3 style="color:#0ea5e9;">接线模拟</h3>
+      <div class="cnt">日光灯/电机</div>
+    </div>
+    <div class="tile" onclick="location='sim_hazard.html'">
+      <div class="icon" style="background:#f59e0b;">🔍</div>
+      <h3 style="color:#f59e0b;">隐患辨识</h3>
+      <div class="cnt">场景点图</div>
+    </div>
+    <div class="tile" onclick="location='sim_firstaid.html'">
+      <div class="icon" style="background:#ef4444;">🚑</div>
+      <h3 style="color:#ef4444;">应急流程</h3>
+      <div class="cnt">触电/CPR/灭火</div>
+    </div>
+    <div class="tile" onclick="location='sim_motor.html'">
+      <div class="icon" style="background:#8b5cf6;">🌀</div>
+      <h3 style="color:#8b5cf6;">电机自锁</h3>
+      <div class="cnt">三相控制</div>
+    </div>
+  </div>
+  <div class="pgw"><div class="pg" id="pg"></div></div>
+  <div class="pgt" id="pgt"></div>
+</div>
+
+<div id="page-list" style="display:none;">
+  <div class="hd" onclick="show('home')" style="cursor:pointer;">← 返回</div>
+  <div class="lv" id="list"></div>
+</div>
+
+<div id="page-q" style="display:none;">
+  <div class="qhead">
+    <span class="tag" id="q-tag"></span>
+    <h2 id="q-title"></h2>
+    <div class="meta" id="q-meta"></div>
+  </div>
+  <div class="qbody" id="q-body"></div>
+  <div style="display:flex;gap:12px;margin:0 16px;">
+    <button id="btn-prev" style="flex:1;padding:12px;border:none;border-radius:10px;background:#e5e7eb;font-size:14px;">上一题</button>
+    <button id="btn-mark" style="flex:1;padding:12px;border:none;border-radius:10px;background:#fef3c7;color:#b45309;font-size:14px;">☆ 标记</button>
+    <button id="btn-done" style="flex:1;padding:12px;border:none;border-radius:10px;background:var(--ok);color:#fff;font-size:14px;">✓ 已掌握</button>
+    <button id="btn-next" style="flex:1;padding:12px;border:none;border-radius:10px;background:var(--c1);color:#fff;font-size:14px;">下一题</button>
+  </div>
+  <div style="height:20px"></div>
+</div>
+
+<div class="nav">
+  <div class="on" onclick="show('home')"><span>🏠</span>首页</div>
+  <div onclick="openList('低压实操')"><span>⚡</span>低压实操</div>
+  <div onclick="openList('应急处置')"><span>🔥</span>应急处置</div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const KEY='dgsc_progress_v1';
+let state=JSON.parse(localStorage.getItem(KEY)||'{"done":[],"marked":[]}');
+let cur=null, curFilter=null;
+
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+
+function show(p){
+  ['home','list','q'].forEach(x=>document.getElementById('page-'+x).style.display=(x===p)?'block':'none');
+  if(p==='home')renderHome();
+}
+function openList(cat){curFilter=cat;renderList();show('list');}
+
+function renderHome(){
+  const all=QUESTIONS.length, done=state.done.length;
+  document.getElementById('cnt-1').textContent='共'+QUESTIONS.filter(q=>q.cat==='低压实操').length+'题';
+  document.getElementById('cnt-2').textContent='共'+QUESTIONS.filter(q=>q.cat==='应急处置').length+'题';
+  const left=QUESTIONS.filter(q=>!state.done.includes(q.code)).length;
+  document.getElementById('cnt-3').textContent='剩'+left+'题';
+  const pct=all?Math.round(done/all*100):0;
+  document.getElementById('pg').style.width=pct+'%';
+  document.getElementById('pgt').textContent='总进度 '+done+'/'+all+'（'+pct+'%）';
+}
+function renderList(){
+  const box=document.getElementById('list');box.innerHTML='';
+  let qs=QUESTIONS;
+  if(curFilter==='未完成')qs=qs.filter(q=>!state.done.includes(q.code));
+  else qs=qs.filter(q=>q.cat===curFilter);
+  qs.forEach((q,i)=>{
+    const d=document.createElement('div');
+    d.className='lv-item'+(state.done.includes(q.code)?' done':'');
+    d.innerHTML='<div class="num">'+(state.done.includes(q.code)?'✓':(i+1))+'</div>'
+      +'<div><div class="ti">'+(q.title||q.code)+'</div><div class="cd">'+q.code+(state.marked.includes(q.code)?'  ☆':'')+'</div></div>';
+    d.onclick=()=>openQ(q.code);
+    box.appendChild(d);
+  });
+}
+function fmtBody(q){
+  let html='';
+  // images
+  q.images.forEach(src=>{html+='<img src="'+src+'" loading="lazy">';});
+  let t=q.content;
+  // split table text (lines starting with |)
+  const lines=t.split('\n');
+  let main='',tbl=[];
+  lines.forEach(ln=>{
+    if(ln.trim().startsWith('|'))tbl.push(ln.trim().slice(1).split('|').map(s=>s.trim()));
+    else main+=ln+'\n';
+  });
+  html+='<div>'+esc(main)+'</div>';
+  if(tbl.length){
+    // drop header-ish first row if it is the column header
+    let rows=tbl;
+    if(tbl[0]&&tbl[0].length>=3&&/考核项目|考核内容/.test(tbl[0].join(''))){
+      rows=tbl.slice(1);
+      html+='<div class="tbl"><table><tr><th>考核项目</th><th>考核内容</th><th>考核要点</th><th>评分标准</th><th>分值</th><th>扣分</th></tr>';
+    }else{
+      html+='<div class="tbl"><table>';
+    }
+    rows.forEach(r=>{
+      if(r.length<3){html+='<tr><td colspan="6">'+esc(r.join(' '))+'</td></tr>';return;}
+      // last cells are 分值 / 扣分 numbers
+      const score=r[r.length-2]&&/^\d+$/.test(r[r.length-2])?r[r.length-2]:'';
+      const deduct=r[r.length-1]&&(/安全不合格项/.test(r[r.length-1])||/^\d+$/.test(r[r.length-1]))?r[r.length-1]:'';
+      const head=r.slice(0,Math.max(1,r.length-(deduct!==''?2:(score!==''?1:0))));
+      html+='<tr><td>'+head.slice(0,1).map(esc).join('')+'</td><td>'+esc(head.slice(1,-1).join(' ')||'')+'</td><td colspan="2">'+esc(head[head.length-1]||'')+'</td><td>'+esc(score)+'</td><td>'+esc(deduct)+'</td></tr>';
+    });
+    html+='</table></div>';
+  }
+  return html;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+
+function openQ(code){
+  cur=code;
+  const i=QUESTIONS.findIndex(q=>q.code===code);
+  const q=QUESTIONS[i];
+  show('q');
+  document.getElementById('q-tag').textContent=q.subject||q.cat;
+  document.getElementById('q-title').textContent=q.title||q.code;
+  document.getElementById('q-meta').innerHTML=(q.minutes?('⏱ '+q.minutes+' 分钟'):'')+(q.weight?(' · 权重 '+q.weight):'')+' · '+(i+1)+'/'+QUESTIONS.length;
+  document.getElementById('q-body').innerHTML=fmtBody(q);
+  document.getElementById('btn-done').textContent=state.done.includes(code)?'✓ 已掌握':'✓ 标记掌握';
+  document.getElementById('btn-mark').textContent=state.marked.includes(code)?'★ 已标':'☆ 标记';
+  window.scrollTo(0,0);
+}
+document.getElementById('btn-prev').onclick=()=>{
+  const i=QUESTIONS.findIndex(q=>q.code===cur);
+  openQ(QUESTIONS[(i-1+QUESTIONS.length)%QUESTIONS.length].code);
+};
+document.getElementById('btn-next').onclick=()=>{
+  const i=QUESTIONS.findIndex(q=>q.code===cur);
+  openQ(QUESTIONS[(i+1)%QUESTIONS.length].code);
+};
+document.getElementById('btn-done').onclick=()=>{
+  const i=state.done.indexOf(cur);
+  if(i>=0)state.done.splice(i,1);else state.done.push(cur);
+  save();
+  document.getElementById('btn-done').textContent=state.done.includes(cur)?'✓ 已掌握':'✓ 标记掌握';
+};
+document.getElementById('btn-mark').onclick=()=>{
+  const i=state.marked.indexOf(cur);
+  if(i>=0)state.marked.splice(i,1);else state.marked.push(cur);
+  save();
+  document.getElementById('btn-mark').textContent=state.marked.includes(cur)?'★ 已标':'☆ 标记';
+};
+function resetAll(){
+  if(confirm('确定清空全部学习进度？')){state={done:[],marked:[]};save();renderHome();}
+}
+renderHome();
+</script>
+</body>
+</html>
