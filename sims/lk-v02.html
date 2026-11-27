@@ -72,54 +72,6 @@ body.debug .nudge-panel{display:block}
 .nudge-btn.on{background:rgba(0,128,0,0.8)}
 </style>
 
-<style id="ut582-style">
-/* ===== UT582+ 精确布局（坐标按原图 800x800 实测） ===== */
-.ut582-panel{position:absolute;inset:0;pointer-events:none}
-
-/* 三个圆形按键——UT582+ 真实位置 */
-.ut582-btn{position:absolute;border:none;border-radius:50%;cursor:pointer;pointer-events:auto;
-  font-family:-apple-system,"PingFang SC",sans-serif;font-weight:600;color:#dcdcdc;
-  background:radial-gradient(circle at 35% 30%, #565656, #232323 72%);
-  box-shadow:0 2px 5px rgba(0,0,0,.5), inset 0 1px 2px rgba(255,255,255,.2);
-  letter-spacing:0;transition:.1s;padding:0;line-height:1}
-.ut582-btn:active{transform:scale(.92);box-shadow:0 1px 2px rgba(0,0,0,.6), inset 0 2px 3px rgba(0,0,0,.5)}
-.ut582-btn.phase{left:13.1%;top:56.9%;width:8.1%;height:8.1%;font-size:4.5px}
-.ut582-btn.idn{left:24.4%;top:56.9%;width:7.5%;height:8.1%;font-size:5px}
-.ut582-btn.test{left:33.1%;top:55.6%;width:9.4%;height:10.6%;font-size:5.5px;color:#2a2a2a;
-  background:radial-gradient(circle at 35% 30%, #ffffff, #e2e2e2 72%);
-  box-shadow:0 2px 6px rgba(0,0,0,.4), inset 0 1px 2px rgba(255,255,255,.95)}
-
-/* 旋转档位盘 */
-.ut582-dial{position:absolute;left:61.3%;top:56.9%;width:21.3%;height:21.3%;border-radius:50%;
-  background:radial-gradient(circle at 40% 35%, #3d3d3d, #161616 72%);
-  box-shadow:0 3px 8px rgba(0,0,0,.55), inset 0 2px 3px rgba(255,255,255,.1);
-  pointer-events:auto;transform:translate(-50%,-50%);
-  left:71.9%;top:67.5%}
-.dial-knob{position:absolute;left:50%;top:50%;width:54%;height:54%;transform:translate(-50%,-50%) rotate(-38deg);
-  border-radius:50%;background:linear-gradient(160deg,#5c5c5c,#1d1d1d 70%);
-  box-shadow:0 2px 5px rgba(0,0,0,.55), inset 0 1px 2px rgba(255,255,255,.18)}
-.dial-knob::after{content:'';position:absolute;left:50%;top:5%;width:9%;height:38%;
-  transform:translateX(-50%);background:#d4d4d4;border-radius:1px}
-.dial-pos{position:absolute;font-size:4.5px;color:#d0d0d0;font-weight:700;cursor:pointer;
-  line-height:1.15;text-align:center;text-shadow:0 1px 1px #000;transition:.12s;padding:1px 2px;border-radius:2px}
-.dial-pos:active{color:#fff;background:rgba(255,255,255,.18);transform:scale(1.2)}
-.dial-pos.p-half{left:50%;top:1%;transform:translateX(-50%)}
-.dial-pos.p-x1{right:0%;top:50%;transform:translateY(-50%)}
-.dial-pos.p-x5{left:50%;bottom:1%;transform:translateX(-50%)}
-.dial-pos.p-ramp{left:0%;top:50%;transform:translateY(-50%);font-size:3.5px}
-
-/* LCD 精确覆盖图上绿色屏 */
-.lcd{background:linear-gradient(145deg,#cfdcc6,#b4c4ab)!important;
-  border:1.5px solid #2e2e2e!important;border-radius:3px!important;
-  box-shadow:inset 0 0 6px rgba(0,0,0,.3)!important;padding:2px 4px!important}
-.lcd-val{color:#182818!important;text-shadow:none!important;font-size:17px!important;min-width:32px!important}
-.lcd-mode{background:#1e2e1c!important;color:#cfe0c0!important;font-size:7px!important;padding:1px 4px!important}
-.lcd-unit{color:#2c3c2a!important;font-size:8px!important}
-.lcd-range{color:#4a5a44!important;background:rgba(0,0,0,.09)!important;font-size:6.5px!important}
-.lcd-range.sel{background:#2e4628!important;color:#e0f0d6!important}
-.lcd-row{gap:2px!important}
-.lcd-range-row{margin-top:1px!important}
-</style>
 </head>
 <body>
 <div class="page" id="page">
@@ -134,33 +86,26 @@ body.debug .nudge-panel{display:block}
   </div>
 
   <!-- 测试仪：居中中下排，LCD / D-pad / 接线柱全部收进容器 -->
-  <div id="testerArea" style="position:absolute;z-index:9;left:50%;top:40%;width:54%;transform:translateX(-50%);">
-    <img src="static/images/learn/UT582-plus-rcd@3x.jpg" style="width:100%">
-    <div class="meas-point" id="mpTL" style="left:29.8%;top:26.9%"><div class="meas-dot" style="border-color:#3355cc;background:rgba(100,140,255,0.4)" id="mdTL"></div><div class="meas-lbl">L</div></div>
-    <div class="meas-point" id="mpTN" style="left:49.4%;top:26.9%"><div class="meas-dot" style="border-color:#555;background:rgba(150,150,150,0.4)" id="mdTN"></div><div class="meas-lbl">N</div></div>
-    <div class="meas-point" id="mpTPE" style="left:40%;top:26.9%"><div class="meas-dot" style="border-color:#33aa55;background:rgba(100,220,140,0.4)"></div><div class="meas-lbl">PE</div></div>
-    <div class="lcd" id="lcdPanel" style="left:16.9%;top:35.6%;width:34.4%;height:13.1%">
+  <div id="testerArea" style="position:absolute;z-index:9;left:50%;top:44%;width:40%;transform:translateX(-50%);">
+    <img src="static/images/learn/YBDS-loudianbaohu-csy@3x.png" style="width:100%">
+    <div class="meas-point" id="mpTL" style="left:62%;top:8%"><div class="meas-dot" style="border-color:#3355cc;background:rgba(100,140,255,0.4)" id="mdTL"></div><div class="meas-lbl">L</div></div>
+    <div class="meas-point" id="mpTN" style="left:34%;top:8%"><div class="meas-dot" style="border-color:#555;background:rgba(150,150,150,0.4)" id="mdTN"></div><div class="meas-lbl">N</div></div>
+    <div class="lcd" id="lcdPanel" style="left:17%;top:12%;width:66%;height:24%">
       <div class="lcd-row"><span class="lcd-mode" id="lcdMode">AT</span></div>
       <div class="lcd-row"><span class="lcd-val" id="lcdValue">000</span><span class="lcd-unit" id="lcdUnit">ms</span></div>
       <div class="lcd-range-row"><span class="lcd-range sel" id="rngCur">30mA</span></div>
     </div>
-    <div class="ut582-panel" id="dpad" style="--s:100">
-      <!-- UT582+ 左下三个按键 -->
-      <button class="ut582-btn phase" id="btnAT" onclick="doAT()">PHASE</button>
-      <button class="ut582-btn idn" id="btnMT" onclick="doMT()">I&Delta;n</button>
-      <button class="ut582-btn test" id="btnRST" onclick="doReset()">TEST</button>
-      <!-- 右下旋转档位盘 -->
-      <div class="ut582-dial" id="dialWrap">
-        <div class="dial-knob" id="dialKnob"></div>
-        <span class="dial-pos p-half" id="btnRminus" onclick="rngDn()">X&frac12;</span>
-        <span class="dial-pos p-x1" id="btnRplus" onclick="rngUp()">X1</span>
-        <span class="dial-pos p-x5" id="btnPWR" onclick="togglePower()">X5</span>
-        <span class="dial-pos p-ramp">AUTO<br>RAMP</span>
-      </div>
+    <div class="dpad" id="dpad" style="--s:100">
+      <button class="dpad-btn at" id="btnAT" onclick="doAT()">AT</button>
+      <button class="dpad-btn rn" id="btnRminus" onclick="rngDn()">R-</button>
+      <button class="dpad-btn rst" id="btnRST" onclick="doReset()">RESET</button>
+      <button class="dpad-btn rp" id="btnRplus" onclick="rngUp()">R+</button>
+      <button class="dpad-btn mt" id="btnMT" onclick="doMT()">MT</button>
+      <button class="dpad-btn pwr" id="btnPWR" onclick="togglePower()">ON</button>
     </div>
   </div>
 
-  <canvas id="cv"></canvas>
+  </canvas>
 
   <!-- 表笔: p0=黑身 p1=黑头 p2=红身 p3=红头, 坐标和 initProbes 硬编码一致 -->
   <div class="probe" id="p0" style="left:14%;top:78%"><img src="static/images/learn/YBDS-biaobi-hei-xie@3x.png" style="width:50px;height:120px"></div>
